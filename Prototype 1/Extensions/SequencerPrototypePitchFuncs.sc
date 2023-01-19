@@ -22,6 +22,7 @@
 				});
 			});
 		});
+		pitchArray = pitchArray.reverse;
 	}
 
 	calcPitchConfirming {
