@@ -111,86 +111,86 @@
 
 	pitchRandKnobFunc {
 		arg val;
-		knobVals[0][0] = val;
+		p1KnobVals[0][0] = val;
 	}
 
 	pitchStepsKnobFunc {
 		arg val;
-		knobVals[0][1] = val;
+		p1KnobVals[0][1] = val;
 	}
 
 	pitchConfirmingKnobFunc {
 		arg val;
-		knobVals[0][2] = val;
+		p1KnobVals[0][2] = val;
 	}
 
 	velocityDensityKnobFunc {
 		arg val;
-		knobVals[1][0] = val;
+		p1KnobVals[1][0] = val;
 	}
 
 	velocityProbabilityKnobFunc {
 		arg val;
-		knobVals[1][1] = val;
+		p1KnobVals[1][1] = val;
 	}
 
 	velocitySyncopationKnobFunc {
 		arg val;
-		knobVals[1][2] = val;
+		p1KnobVals[1][2] = val;
 	}
 
 	velocityDynamicsKnobFunc {
 		arg val;
-		knobVals[1][3] = val;
+		p1KnobVals[1][3] = val;
 	}
 
 	octaveDensityKnobFunc {
 		arg val;
-		knobVals[2][0] = val;
+		p1KnobVals[2][0] = val;
 	}
 
 	octaveProbabilityKnobFunc {
 		arg val;
-		knobVals[2][1] = val;
+		p1KnobVals[2][1] = val;
 	}
 
 	octaveOffsetKnobFunc {
 		arg val;
-		knobVals[2][3] = val;
+		p1KnobVals[2][3] = val;
 	}
 
 	articulationStaccatoKnobFunc {
 		arg val;
-		knobVals[3][0] = val;
+		p1KnobVals[3][0] = val;
 	}
 
 	articulationSlideKnobFunc {
 		arg val;
-		knobVals[3][1] = val;
+		p1KnobVals[3][1] = val;
 	}
 
 	articulationAccentKnobFunc {
 		arg val;
-		knobVals[3][2] = val;
+		p1KnobVals[3][2] = val;
 	}
 
 	ornamentationGraceNoteKnobFunc {
 		arg val;
-		knobVals[4][0] = val;
+		p1KnobVals[4][0] = val;
 	}
 
 	ornamentationFigureKnobFunc {
 		arg val;
-		knobVals[4][1] = val;
+		p1KnobVals[4][1] = val;
 	}
 
 	timingSwingKnobFunc {
 		arg val;
-		knobVals[5][0] = val;
+		p1KnobVals[5][0] = val;
 	}
 
 	timingRubatoKnobFunc {
 		arg val;
-		knobVals[5][1] = val;
+		p1KnobVals[5][1] = val;
 	}
 }

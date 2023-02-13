@@ -192,13 +192,17 @@
 
 	initPage1 {
 		// generate UI
-		sliders = [];
-		compositeViews = [];
-		plotters = [];
-		knobViews = [];
-		knobLists = [];
-		labelLists = [];
-		text = [];
+		p1KnobVals = 0.5!4!6;
+		p1MiniKnobVals = 0!2!6;
+		p1MiniButtons = [];
+		p1CompositeViews = [];
+		p1Plotters = [];
+		p1KnobViews = [];
+		p1KnobLists = [];
+		p1LabelLists = [];
+		p1MiniKnobs = [];
+		p1MiniButtons = [];
+		p1Text = [];
 		pageCompositeViews[0].asView.decorator_(FlowLayout(pageCompositeViews[0].bounds, 0@0, 10@10));
 
 		// colors
@@ -227,21 +231,35 @@
 		3.do({
 			|index|
 
-			// add titles
+			// add titles, mini knobs and buttons
 			2.do({
 				|index2|
-				text = text ++ TextView(pageCompositeViews[0], Rect(
-					globalMargin + ((index/3).floor * (titleWidth + globalMargin)),
-					25 + (125*index.mod(3)),
-					titleWidth,
+				p1Text = p1Text ++ TextView(pageCompositeViews[0], Rect(
+					0,//globalMargin + ((index/3).floor * (titleWidth + globalMargin)),
+					0,//25 + (125*index.mod(3)),
+					titleWidth - 90,
 					20));
-				text[2 * index + index2].setString("test");
+				p1Text[2 * index + index2].setString("test");
+
+				p1MiniKnobs = p1MiniKnobs ++ [{Knob.new(
+					pageCompositeViews[0],
+					Rect(0, 0, 20, 20))
+				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
+				.mode_(\vert)
+				.value_(0.5)
+				}!2];
+
+				p1MiniButtons = p1MiniButtons ++ [Button(
+					pageCompositeViews[0],
+					Rect(0, 0, 20, 20))
+				.action_({ arg button; button.value.postln; });
+				];
 			});
 
 			// add graphs
 			2.do({
 				|index2|
-				compositeViews = compositeViews ++ [
+				p1CompositeViews = p1CompositeViews ++ [
 					CompositeView(
 						pageCompositeViews[0],
 						Rect(
@@ -251,35 +269,35 @@
 							plotHeight)
 				).background_(Color.black).resize_(5)];
 
-				plotters = plotters ++ [Plotter("plot", parent: compositeViews[2 * index + index2]).plotMode = \bars];
-				plotters[2 * index + index2].value = [ 0!64, ({1.0.rand}!64 ++ [0]) ];
-				plotters[2 * index + index2].plotColor = colorLists[2 * index + index2];
-				plotters[2 * index + index2].superpose_(true);
-				plotters[2 * index + index2].minval = 0;
+				p1Plotters = p1Plotters ++ [Plotter("plot", parent: p1CompositeViews[2 * index + index2]).plotMode = \bars];
+				p1Plotters[2 * index + index2].value = [ 0!64, ({1.0.rand}!64 ++ [0]) ];
+				p1Plotters[2 * index + index2].plotColor = colorLists[2 * index + index2];
+				p1Plotters[2 * index + index2].superpose_(true);
+				p1Plotters[2 * index + index2].minval = 0;
 			});
 
 			// add knobs
 			2.do({
 				|index2|
-				knobViews = knobViews ++ [
+				p1KnobViews = p1KnobViews ++ [
 					CompositeView(
 						pageCompositeViews[0],
 						Rect(0, 0, plotWidth, 85)
 					).background_(Color.grey).resize_(5);
 				];
-				knobViews[2 * index + index2].decorator_(
-					FlowLayout(knobViews[2 * index + index2].bounds, (plotWidth - 30 - (knobSize * 4))/2@10, 10@10)
+				p1KnobViews[2 * index + index2].decorator_(
+					FlowLayout(p1KnobViews[2 * index + index2].bounds, (plotWidth - 30 - (knobSize * 4))/2@10, 10@10)
 				);
-				knobLists = knobLists ++ [{Knob.new(
-					knobViews[2 * index + index2],
+				p1KnobLists = p1KnobLists ++ [{Knob.new(
+					p1KnobViews[2 * index + index2],
 					Rect(0, 0, knobSize, knobSize))
 				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
 				.mode_(\vert)
 				.value_(0.5)
 				}!4];
 
-				labelLists = labelLists ++ [{TextView(
-					knobViews[2 * index + index2],
+				p1LabelLists = p1LabelLists ++ [{TextView(
+					p1KnobViews[2 * index + index2],
 					Rect(0, 0, labelWidth, labelHeight)
 				)}!4];
 			});
@@ -297,8 +315,8 @@
 				[0, 1, 2, 3],
 			].at(index).do({
 				|input, index2|
-				knobLists[index][input].value = 0.0;
-				knobVals[index][input] = 0.0;
+				p1KnobLists[index][input].value = 0.0;
+				p1KnobVals[index][input] = 0.0;
 			});
 			[
 				[],
@@ -309,13 +327,13 @@
 				[],
 			].at(index).do({
 				|input, index2|
-				knobLists[index][input].value = 1.0;
-				knobVals[index][input] = 1.0;
+				p1KnobLists[index][input].value = 1.0;
+				p1KnobVals[index][input] = 1.0;
 			});
 		});
 
 		// add actions to knobs
-		knobLists.do({
+		p1KnobLists.do({
 			arg list, index;
 			list.do({
 				arg knob, index2;
@@ -373,12 +391,12 @@
 				knob.action_({
 					|knobSelf|
 					func.value(knobSelf.value);
-					knobVals[index][index2].postln;
+					p1KnobVals[index][index2].postln;
 				});
 			});
 		});
 
-		labelLists.do({
+		p1LabelLists.do({
 			arg list, index;
 			list.do({
 				arg label, index2;
@@ -392,6 +410,201 @@
 				].at(index).at(index2);
 			});
 		});
+	}
+
+	initPage2 {
+		// generate UI
+		pageCompositeViews[1].asView.decorator_(FlowLayout(pageCompositeViews[0].bounds, 0@0, 10@10));
+	}
+
+	initPage3 {
+		// generate UI
+		p3KnobVals = 0.5!4!6;
+		p3MiniKnobVals = 0!2!6;
+		p3MiniButtons = [];
+		p3CompositeViews = [];
+		p3Plotters = [];
+		p3KnobViews = [];
+		p3KnobLists = [];
+		p3LabelLists = [];
+		p3MiniKnobs = [];
+		p3MiniButtons = [];
+		p3Text = [];
+		pageCompositeViews[2].asView.decorator_(FlowLayout(pageCompositeViews[2].bounds, 0@0, 10@10));
+
+		3.do({
+			|index|
+
+			// add titles, mini knobs and buttons
+			2.do({
+				|index2|
+				p3Text = p3Text ++ TextView(pageCompositeViews[2], Rect(
+					0,//globalMargin + ((index/3).floor * (titleWidth + globalMargin)),
+					0,//25 + (125*index.mod(3)),
+					titleWidth - 90,
+					20));
+				p3Text[2 * index + index2].setString("test");
+
+				p3MiniKnobs = p3MiniKnobs ++ [{Knob.new(
+					pageCompositeViews[2],
+					Rect(0, 0, 20, 20))
+				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
+				.mode_(\vert)
+				.value_(0.5)
+				}!2];
+
+				p3MiniButtons = p3MiniButtons ++ [Button(
+					pageCompositeViews[2],
+					Rect(0, 0, 20, 20))
+				.action_({ arg button; button.value.postln; });
+				];
+			});
+
+			// add graphs
+			2.do({
+				|index2|
+				p3CompositeViews = p3CompositeViews ++ [
+					CompositeView(
+						pageCompositeViews[2],
+						Rect(
+							0, //globalMargin + ((index/3).floor * (plotWidth + globalMargin) ),
+							0, //50 + (125*index.mod(3)),
+							plotWidth,
+							plotHeight)
+				).background_(Color.black).resize_(5)];
+
+				p3Plotters = p3Plotters ++ [Plotter("plot", parent: p3CompositeViews[2 * index + index2]).plotMode = \bars];
+				p3Plotters[2 * index + index2].value = [ 0!64, ({1.0.rand}!64 ++ [0]) ];
+				p3Plotters[2 * index + index2].plotColor = colorLists[2 * index + index2];
+				p3Plotters[2 * index + index2].superpose_(true);
+				p3Plotters[2 * index + index2].minval = 0;
+			});
+
+			// add knobs
+			2.do({
+				|index2|
+				p3KnobViews = p3KnobViews ++ [
+					CompositeView(
+						pageCompositeViews[2],
+						Rect(0, 0, plotWidth, 85)
+					).background_(Color.grey).resize_(5);
+				];
+				p3KnobViews[2 * index + index2].decorator_(
+					FlowLayout(p3KnobViews[2 * index + index2].bounds, (plotWidth - 30 - (knobSize * 4))/2@10, 10@10)
+				);
+				p3KnobLists = p3KnobLists ++ [{Knob.new(
+					p3KnobViews[2 * index + index2],
+					Rect(0, 0, knobSize, knobSize))
+				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
+				.mode_(\vert)
+				.value_(0.5)
+				}!4];
+
+				p3LabelLists = p3LabelLists ++ [{TextView(
+					p3KnobViews[2 * index + index2],
+					Rect(0, 0, labelWidth, labelHeight)
+				)}!4];
+			});
+		});
+	}
+
+	initPage4 {
+		// generate UI
+		p4KnobVals = 0.5!4!6;
+		p4MiniKnobVals = 0!2!6;
+		p4MiniButtons = [];
+		p4CompositeViews = [];
+		p4Plotters = [];
+		p4KnobViews = [];
+		p4KnobLists = [];
+		p4LabelLists = [];
+		p4MiniKnobs = [];
+		p4MiniButtons = [];
+		p4Text = [];
+		pageCompositeViews[3].asView.decorator_(FlowLayout(pageCompositeViews[3].bounds, 0@0, 10@10));
+
+		3.do({
+			|index|
+
+			// add titles, mini knobs and buttons
+			2.do({
+				|index2|
+				p4Text = p4Text ++ TextView(pageCompositeViews[3], Rect(
+					0,//globalMargin + ((index/3).floor * (titleWidth + globalMargin)),
+					0,//25 + (125*index.mod(3)),
+					titleWidth - 90,
+					20));
+				p4Text[2 * index + index2].setString("test");
+
+				p4MiniKnobs = p4MiniKnobs ++ [{Knob.new(
+					pageCompositeViews[3],
+					Rect(0, 0, 20, 20))
+				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
+				.mode_(\vert)
+				.value_(0.5)
+				}!2];
+
+				p4MiniButtons = p4MiniButtons ++ [Button(
+					pageCompositeViews[3],
+					Rect(0, 0, 20, 20))
+				.action_({ arg button; button.value.postln; });
+				];
+			});
+
+			// add graphs
+			2.do({
+				|index2|
+				p4CompositeViews = p4CompositeViews ++ [
+					CompositeView(
+						pageCompositeViews[3],
+						Rect(
+							0, //globalMargin + ((index/3).floor * (plotWidth + globalMargin) ),
+							0, //50 + (125*index.mod(3)),
+							plotWidth,
+							plotHeight)
+				).background_(Color.black).resize_(5)];
+
+				p4Plotters = p4Plotters ++ [Plotter("plot", parent: p4CompositeViews[2 * index + index2]).plotMode = \bars];
+				p4Plotters[2 * index + index2].value = [ 0!64, ({1.0.rand}!64 ++ [0]) ];
+				p4Plotters[2 * index + index2].plotColor = colorLists[2 * index + index2];
+				p4Plotters[2 * index + index2].superpose_(true);
+				p4Plotters[2 * index + index2].minval = 0;
+			});
+
+			// add knobs
+			2.do({
+				|index2|
+				p4KnobViews = p4KnobViews ++ [
+					CompositeView(
+						pageCompositeViews[3],
+						Rect(0, 0, plotWidth, 85)
+					).background_(Color.grey).resize_(5);
+				];
+				p4KnobViews[2 * index + index2].decorator_(
+					FlowLayout(p4KnobViews[2 * index + index2].bounds, (plotWidth - 30 - (knobSize * 4))/2@10, 10@10)
+				);
+				p4KnobLists = p4KnobLists ++ [{Knob.new(
+					p4KnobViews[2 * index + index2],
+					Rect(0, 0, knobSize, knobSize))
+				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
+				.mode_(\vert)
+				.value_(0.5)
+				}!4];
+
+				p4LabelLists = p4LabelLists ++ [{TextView(
+					p4KnobViews[2 * index + index2],
+					Rect(0, 0, labelWidth, labelHeight)
+				)}!4];
+			});
+		});
+	}
+
+	initPage5 {
+
+	}
+
+	initPage6 {
+
 	}
 
 }

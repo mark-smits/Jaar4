@@ -15,14 +15,38 @@ SequencerUIPrototype {
 	mockupTextBoxes,
 
 	// zooi om over te hevelen van de huidige UI implementatie
-	text,
-	compositeViews,
-	sliders,
-	plotters,
-	knobViews,
-	knobLists,
-	labelLists,
-	knobVals,
+	p1Text,
+	p1CompositeViews,
+	p1Plotters,
+	p1KnobViews,
+	p1KnobLists,
+	p1LabelLists,
+	p1KnobVals,
+	p1MiniKnobs,
+	p1MiniKnobVals,
+	p1MiniButtons,
+
+	p3Text,
+	p3CompositeViews,
+	p3Plotters,
+	p3KnobViews,
+	p3KnobLists,
+	p3LabelLists,
+	p3KnobVals,
+	p3MiniKnobs,
+	p3MiniKnobVals,
+	p3MiniButtons,
+
+	p4Text,
+	p4CompositeViews,
+	p4Plotters,
+	p4KnobViews,
+	p4KnobLists,
+	p4LabelLists,
+	p4KnobVals,
+	p4MiniKnobs,
+	p4MiniKnobVals,
+	p4MiniButtons,
 
 	// sizing params
 	plotHeight = 75, plotWidth = 250,
@@ -45,7 +69,6 @@ SequencerUIPrototype {
 
 	init {
 		// initialize parameters
-		knobVals = 0.5!4!6;
 
 		window = Window("New UI", Rect(20, 30, 540, 680));
 		GUI.skin.plot.background = Color.black;
@@ -89,7 +112,9 @@ SequencerUIPrototype {
 		});
 
 		this.initPage1;
-		knobVals.postln;
+		this.initPage3;
+		this.initPage4;
+		p1KnobVals.postln;
 
 		window.front;
 		window.refresh;
