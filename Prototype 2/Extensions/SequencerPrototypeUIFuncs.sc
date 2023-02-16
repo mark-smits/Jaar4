@@ -190,6 +190,163 @@
 
 	// functions handling UI tasks
 
+	updateP1Plotters {
+		var values;
+		6.do({
+			arg index, step, size;
+
+			size = [
+				paramDict[\pitchReset],
+				paramDict[\velocityReset],
+				paramDict[\octaveReset],
+				paramDict[\articulationReset],
+				paramDict[\ornamentationReset],
+				paramDict[\timingReset]
+			].at(index);
+
+			switch(index,
+				0, { values = this.getValuesForPitchPlot },
+				1, { values = this.getValuesForVelocityPlot },
+				2, { values = this.getValuesForOctavePlot },
+				3, { values = this.getValuesForArticulationPlot },
+				4, { values = this.getValuesForOrnamentationPlot },
+				5, { values = paramDict[\timingArray] },
+			);
+			if(index < 5, {
+				var buffervalues;
+				buffervalues = [0!size];
+				values.do({
+					arg valueList, valIndex;
+					buffervalues = buffervalues ++ [valueList.at( (0..(size-1)) ) ++ [0]];
+				});
+				values = buffervalues;
+			}, {
+				values = [0!size, values.at( (0..(size-1)) ) ++ [0]]; // to make the last step visible in the bar chart
+			});
+
+			step = [
+				paramDict[\pitchIndex],
+				paramDict[\velocityIndex],
+				paramDict[\octaveIndex],
+				paramDict[\articulationIndex],
+				paramDict[\ornamentationIndex],
+				paramDict[\timingIndex]
+			].at(index);
+			if(step < size, {
+				values[0][step] = 1 * [1, 2, 2, 2, 2, 2, 2, 1].at(index);
+			});
+
+			p1Plotters[index].value = values;
+		});
+		this.p1TextFunc;
+		window.refresh;
+	}
+
+	p1TextFunc {
+		p1Text.do({
+			arg tbox, index;
+			var stringText;
+			stringText = [
+				"Pitch",
+				"Velocity",
+				"Octaves",
+				"Articulation",
+				"Ornamentation",
+				"Timing"
+			].at(index);
+			stringText = stringText ++ " (step: " ++
+			([
+				paramDict[\pitchIndex],
+				paramDict[\velocityIndex],
+				paramDict[\octaveIndex],
+				paramDict[\articulationIndex],
+				paramDict[\ornamentationIndex],
+				paramDict[\timingIndex]
+			].at(index) + 1).asInteger.asString ++ "/" ++
+			[
+				paramDict[\pitchReset],
+				paramDict[\velocityReset],
+				paramDict[\octaveReset],
+				paramDict[\articulationReset],
+				paramDict[\ornamentationReset],
+				paramDict[\timingReset]
+			].at(index).asString ++
+			")";
+			if(index < 5, {
+				stringText = stringText ++ "; (mutation: " ++
+				[
+					paramDict[\pitchMutation],
+					paramDict[\velocityMutation],
+					paramDict[\octaveMutation],
+					paramDict[\articulationMutation],
+					paramDict[\ornamentationMutation]
+				].at(index).asString ++
+				")";
+			});
+			tbox.string = stringText;
+		});
+	}
+
+	getValuesForPitchPlot {
+		// todo: implement pitch functions & display multiple macros on the same step
+		var pitch, bipolar2pos, bipolar2neg, bipolar1pos, bipolar1neg;
+		pitch = paramDict[\mutatedPitchArray][paramDict[\pitchRandom]];
+		bipolar2pos = 0!64; bipolar2neg = 0!64;
+		bipolar1pos = 0!64; bipolar1neg = 0!64;
+
+		if((paramDict[\mutatedPitchStepsArray][paramDict[\pitchSteps]]).sum > 0, {
+			bipolar1pos = (paramDict[\mutatedPitchStepsArray][paramDict[\pitchSteps]]).abs;
+		}, {
+			bipolar1neg = (paramDict[\mutatedPitchStepsArray][paramDict[\pitchSteps]]).abs;
+		});
+
+		if((paramDict[\mutatedPitchConfirmingArray][paramDict[\pitchConfirming]]).sum > 0, {
+			bipolar2pos = (paramDict[\mutatedPitchConfirmingArray][paramDict[\pitchConfirming]]).abs + bipolar1pos + bipolar1neg;
+		}, {
+			bipolar2neg = (paramDict[\mutatedPitchConfirmingArray][paramDict[\pitchConfirming]]).abs + bipolar1pos + bipolar1neg;
+		});
+
+		^[pitch, bipolar2pos * -0.15, bipolar2neg * -0.15, bipolar1pos * -0.15, bipolar1neg * -0.15];
+	}
+
+	getValuesForVelocityPlot {
+		// todo: implement probability functions, dynamics & display syncopation acurately
+		var velocity, dynamics, syncopation, probability, probTrigs;
+		velocity = paramDict[\mutatedVelocityArray][paramDict[\velocityDensity]] * paramDict[\mutatedVelocityDynamicsArray][paramDict[\velocityDynamics]];
+		syncopation = paramDict[\mutatedVelocitySyncopationArray][paramDict[\velocitySyncopation]];
+		syncopation = syncopation * velocity;
+		probability = 0; // velocityProbability/(dimensionSize - 1.0); // use these if there are probabilities per step, for a global probability a single knob should suffice
+		^[velocity, syncopation, (2.0*probability)!64, 0!64];
+	}
+
+	getValuesForOctavePlot {
+		// todo: implement probability functions and display
+		var octave, probability;
+		octave = paramDict[\mutatedOctaveArray][paramDict[\octaveDensity]];
+		probability = 0; // octaveProbability/(dimensionSize - 1.0); // use these if there are probabilities per step, for a global probability a single knob should suffice
+		^[octave, (2.0*probability)!64, 0!64];
+	}
+
+	getValuesForArticulationPlot {
+		// todo: implement articulation
+		var accent, slide, staccato;
+		accent = paramDict[\mutatedArticulationAccentArray][paramDict[\articulationAccentDensity]];
+		staccato = paramDict[\mutatedArticulationStaccatoArray][paramDict[\articulationStaccatoDensity]];
+		slide = paramDict[\mutatedArticulationSlideArray][paramDict[\articulationSlideDensity]];
+		accent = accent + staccato + slide;
+		staccato = staccato + slide;
+		^[accent, staccato, slide]*0.5;
+	}
+
+	getValuesForOrnamentationPlot {
+		// todo: implement ornamentation
+		var graceNotes, figures;
+		graceNotes = paramDict[\mutatedOrnamentationGraceNoteArray][paramDict[\ornamentationGraceNotes]];
+		figures = paramDict[\mutatedOrnamentationFigureArray][paramDict[\ornamentationFigures]];
+		graceNotes = graceNotes + figures;
+		^[graceNotes, figures]*0.5;
+	}
+
 	initPage1 {
 		// generate UI
 		p1KnobVals = 0.5!4!6;

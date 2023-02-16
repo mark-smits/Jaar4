@@ -5,7 +5,7 @@ SequencerUIPrototype {
 	nothing;
 	// variables
 	var
-	testDict,
+	paramDict,
 	// UI objects
 	window,
 	pageButtons,
@@ -122,8 +122,7 @@ SequencerUIPrototype {
 
 	passDict {
 		arg dict;
-		testDict = dict;
-		testDict.put(\testvar, 1);
+		paramDict = dict;
 	}
 
 	// getters

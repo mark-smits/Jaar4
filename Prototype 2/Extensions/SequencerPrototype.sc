@@ -139,8 +139,8 @@ SequencerPrototype {
 	articulationColor1, articulationColor2, articulationColor3,
 	probabilityActiveColor, probabilityInactiveColor, colorLists,
 
-	// test dictionary to pass values between UI and this class
-	testDict;
+	// dictionary to pass values between UI and this class
+	paramDict;
 
 	// init funcs
 	*initClass {
@@ -152,12 +152,6 @@ SequencerPrototype {
 		// init UI
 		newUI = SequencerUIPrototype.new;
 		newUI.init;
-
-		// test dictionary
-		testDict = Dictionary.newFrom([\testvar, 0]);
-		"testpost 1: ".post; testDict.dopostln;
-		newUI.passDict(testDict);
-		"testpost 2: ".post; testDict.dopostln;
 
 		// initialize parameters
 
@@ -409,10 +403,18 @@ SequencerPrototype {
 			});
 		});
 
+		// test dictionary
+		paramDict = Dictionary();
+		this.updateDict1; this.updateDict2;
+		newUI.passDict(paramDict);
+		"testpost 2: ".post; paramDict.dopostln;
+
 		// update the parameters
 		window.front;
 		this.textFunc;
 		this.updatePlotters;
+
+		newUI.updateP1Plotters;
 	}
 
 	// calculations offloaded to seperate file
