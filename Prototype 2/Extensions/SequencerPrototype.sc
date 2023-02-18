@@ -407,7 +407,6 @@ SequencerPrototype {
 		paramDict = Dictionary();
 		this.updateDict1; this.updateDict2;
 		newUI.passDict(paramDict);
-		"testpost 2: ".post; paramDict.dopostln;
 
 		// update the parameters
 		window.front;

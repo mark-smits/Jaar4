@@ -99,6 +99,7 @@ SequencerUIPrototype {
 		page = pageCompositeViews[0];
 		page.visible = true;
 
+		/*
 		mockupTextBoxes = [];
 		5.do({
 			|index|
@@ -110,6 +111,7 @@ SequencerUIPrototype {
 			));
 			mockupTextBoxes[index].setString("page " ++ index.asString);
 		});
+		*/
 
 		this.initPage1;
 		this.initPage3;

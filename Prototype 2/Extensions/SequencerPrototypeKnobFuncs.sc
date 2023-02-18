@@ -109,6 +109,7 @@
 
 	// functions to be added to knobs
 
+	/*
 	pitchRandKnobFunc {
 		arg val;
 		p1KnobVals[0][0] = val;
@@ -193,4 +194,5 @@
 		arg val;
 		p1KnobVals[5][1] = val;
 	}
+	*/
 }

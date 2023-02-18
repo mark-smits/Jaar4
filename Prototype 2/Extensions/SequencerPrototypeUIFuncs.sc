@@ -500,48 +500,48 @@
 					0, {
 						// pitch
 						switch(index2,
-							0, { func = {|val| this.pitchRandKnobFunc(val)}; },
-							1, { func = {|val| this.pitchStepsKnobFunc(val)}; },
-							2, { func = {|val| this.pitchConfirmingKnobFunc(val)}; },
+							0, { func = {|val| p1KnobVals[0][0] = val}; },
+							1, { func = {|val| p1KnobVals[0][1] = val}; },
+							2, { func = {|val| p1KnobVals[0][2] = val}; },
 						)
 					},
 					1, {
 						// velocity
 						switch(index2,
-							0, { func = {|val| this.velocityDensityKnobFunc(val)}; },
-							1, { func = {|val| this.velocityProbabilityKnobFunc(val)}; },
-							2, { func = {|val| this.velocitySyncopationKnobFunc(val)}; },
-							3, { func = {|val| this.velocityDynamicsKnobFunc(val)}; },
+							0, { func = {|val| p1KnobVals[1][0] = val}; },
+							1, { func = {|val| p1KnobVals[1][1] = val}; },
+							2, { func = {|val| p1KnobVals[1][2] = val}; },
+							3, { func = {|val| p1KnobVals[1][3] = val}; },
 						)
 					},
 					2, {
 						// octaves
 						switch(index2,
-							0, { func = {|val| this.octaveDensityKnobFunc(val)}; },
-							1, { func = {|val| this.octaveProbabilityKnobFunc(val)}; },
-							3, { func = {|val| this.octaveOffsetKnobFunc(val)}; },
+							0, { func = {|val| p1KnobVals[2][0] = val}; },
+							1, { func = {|val| p1KnobVals[2][1] = val}; },
+							3, { func = {|val| p1KnobVals[2][3] = val}; },
 						)
 					},
 					3, {
 						// articulation
 						switch(index2,
-							0, { func = {|val| this.articulationStaccatoKnobFunc(val)}; },
-							1, { func = {|val| this.articulationSlideKnobFunc(val)}; },
-							2, { func = {|val| this.articulationAccentKnobFunc(val)}; },
+							0, { func = {|val| p1KnobVals[3][0] = val}; },
+							1, { func = {|val| p1KnobVals[3][1] = val}; },
+							2, { func = {|val| p1KnobVals[3][2] = val}; },
 						)
 					},
 					4, {
 						// ornamentation
 						switch(index2,
-							0, { func = {|val| this.ornamentationGraceNoteKnobFunc(val)}; },
-							1, { func = {|val| this.ornamentationFigureKnobFunc(val)}; },
+							0, { func = {|val| p1KnobVals[4][0] = val}; },
+							1, { func = {|val| p1KnobVals[4][1] = val}; },
 						)
 					},
 					5, {
 						// timing
 						switch(index2,
-							0, { func = {|val| this.timingSwingKnobFunc(val)}; },
-							1, { func = {|val| this.timingRubatoKnobFunc(val)}; },
+							0, { func = {|val| p1KnobVals[5][0] = val}; },
+							1, { func = {|val| p1KnobVals[5][1] = val}; },
 						)
 					},
 				);
@@ -549,6 +549,8 @@
 					|knobSelf|
 					func.value(knobSelf.value);
 					p1KnobVals[index][index2].postln;
+					this.updateDict;
+					this.updateP1Plotters;
 				});
 			});
 		});
