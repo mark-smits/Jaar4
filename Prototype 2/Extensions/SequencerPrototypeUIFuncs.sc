@@ -212,16 +212,17 @@
 				4, { values = this.getValuesForOrnamentationPlot },
 				5, { values = paramDict[\timingArray] },
 			);
+
 			if(index < 5, {
 				var buffervalues;
-				buffervalues = [0!size];
+				buffervalues = [0!(size.clip(1, 64))];
 				values.do({
 					arg valueList, valIndex;
-					buffervalues = buffervalues ++ [valueList.at( (0..(size-1)) ) ++ [0]];
+					buffervalues = buffervalues ++ [valueList.at( (0..( (size-1).clip(0, 63) )) ) ++ [0]];
 				});
 				values = buffervalues;
 			}, {
-				values = [0!size, values.at( (0..(size-1)) ) ++ [0]]; // to make the last step visible in the bar chart
+				values = [0!(size.clip(1, 64)), values.at( (0..( (size-1).clip(0, 63) ) ) ) ++ [0]]; // to make the last step visible in the bar chart
 			});
 
 			step = [
@@ -254,6 +255,7 @@
 				"Ornamentation",
 				"Timing"
 			].at(index);
+
 			stringText = stringText ++ " (step: " ++
 			([
 				paramDict[\pitchIndex],
@@ -272,8 +274,9 @@
 				paramDict[\timingReset]
 			].at(index).asString ++
 			")";
+
 			if(index < 5, {
-				stringText = stringText ++ "; (mutation: " ++
+				stringText = stringText ++ "; (mut.: " ++
 				[
 					paramDict[\pitchMutation],
 					paramDict[\velocityMutation],
@@ -283,6 +286,7 @@
 				].at(index).asString ++
 				")";
 			});
+
 			tbox.string = stringText;
 		});
 	}
@@ -350,7 +354,7 @@
 	initPage1 {
 		// generate UI
 		p1KnobVals = 0.5!4!6;
-		p1MiniKnobVals = 0!2!6;
+		p1MiniKnobVals = [0.25, 0]!6;
 		p1MiniButtons = [];
 		p1CompositeViews = [];
 		p1Plotters = [];
@@ -495,6 +499,7 @@
 			list.do({
 				arg knob, index2;
 				var func;
+				/*
 				func = {};
 				switch(index,
 					0, {
@@ -545,10 +550,28 @@
 						)
 					},
 				);
+				*/
+				func = {|val| p1KnobVals[index][index2] = val};
 				knob.action_({
 					|knobSelf|
 					func.value(knobSelf.value);
 					p1KnobVals[index][index2].postln;
+					this.updateDict;
+					this.updateP1Plotters;
+				});
+			});
+		});
+
+		p1MiniKnobs.do({
+			arg list, index;
+			list.do({
+				arg knob, index2;
+				var func;
+				func = {|val| p1MiniKnobVals[index][index2] = val};
+				knob.action_({
+					|knobSelf|
+					func.value(knobSelf.value);
+					p1MiniKnobVals[index][index2].postln;
 					this.updateDict;
 					this.updateP1Plotters;
 				});

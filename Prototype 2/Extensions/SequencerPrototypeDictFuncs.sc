@@ -16,6 +16,11 @@
 		paramDict[\mutatedArticulationAccentArray] = mutatedArticulationAccentArray;
 		paramDict[\mutatedOrnamentationGraceNoteArray] = mutatedOrnamentationGraceNoteArray;
 		paramDict[\mutatedOrnamentationFigureArray] = mutatedOrnamentationFigureArray;
+		paramDict[\pitchMutation] = pitchMutation;
+		paramDict[\velocityMutation] = velocityMutation;
+		paramDict[\octaveMutation] = octaveMutation;
+		paramDict[\articulationMutation] = articulationMutation;
+		paramDict[\ornamentationMutation] = ornamentationMutation;
 	}
 
 	updateDict2 {
@@ -72,7 +77,7 @@
 + SequencerUIPrototype {
 
 	updateDict {
-		//paramDict[\dimensionSize] = dimensionSize;
+		// arrays
 		paramDict[\pitchRandom] = (paramDict[\dimensionSize]*p1KnobVals[0][0] - 0.001).asInteger;
 		paramDict[\pitchSteps] = (paramDict[\dimensionSize]*p1KnobVals[0][1] - 0.001).asInteger;
 		paramDict[\pitchConfirming] = (paramDict[\dimensionSize]*p1KnobVals[0][2] - 0.001).asInteger;
@@ -92,5 +97,17 @@
 		paramDict[\ornamentationPolyphony] = (paramDict[\dimensionSize]*p1KnobVals[4][2] - 0.001).asInteger;
 		paramDict[\timingSwing] = p1KnobVals[5][0];
 		paramDict[\timingRubato] = p1KnobVals[5][1];
+		// lengths
+		paramDict[\pitchReset] = (63.0*p1MiniKnobVals[0][0] + 1.001).asInteger;
+		paramDict[\octaveReset] =  (63.0*p1MiniKnobVals[2][0] + 1.001).asInteger;
+		paramDict[\velocityReset] = (63.0*p1MiniKnobVals[1][0] + 1.001).asInteger;
+		paramDict[\articulationReset] = (63.0*p1MiniKnobVals[3][0] + 1.001).asInteger;
+		paramDict[\ornamentationReset] = (63.0*p1MiniKnobVals[4][0] + 1.001).asInteger;
+		// mutations
+		paramDict[\pitchMutation] = (4.0*p1MiniKnobVals[0][1] - 0.001).asInteger;
+		paramDict[\velocityMutation] = (4.0*p1MiniKnobVals[1][1] - 0.001).asInteger;
+		paramDict[\octaveMutation] = (4.0*p1MiniKnobVals[2][1] - 0.001).asInteger;
+		paramDict[\articulationMutation] = (4.0*p1MiniKnobVals[3][1] - 0.001).asInteger;
+		paramDict[\ornamentationMutation] = (4.0*p1MiniKnobVals[4][1] - 0.001).asInteger;
 	}
 }
