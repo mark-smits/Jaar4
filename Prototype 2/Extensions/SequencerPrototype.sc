@@ -408,6 +408,41 @@ SequencerPrototype {
 		this.updateDict1; this.updateDict2;
 		newUI.passDict(paramDict);
 
+		// dictionary functions to regen values from the UI
+		paramDict[\regenFuncPitch] = {
+			this.calcPitchArray;
+			this.calcPitchConfirming;
+			this.calcPitchSteps;
+			this.resetPitchMutation;
+			this.updateDict1;
+		};
+		paramDict[\regenFuncOctave] = {
+			this.calcOctaveArray;
+			this.resetOctaveMutation;
+			this.updateDict1;
+		};
+		paramDict[\regenFuncVelocity] = {
+			this.calcVelocityArray;
+			this.calcVelocityAccentArray;
+			this.calcVelocitySyncopationArray;
+			this.calcVelocityDynamicsArray;
+			this.resetVelocityMutation;
+			this.updateDict1;
+		};
+		paramDict[\regenFuncArticulation] = {
+			this.calcArticulationSlideArray;
+			this.calcArticulationStaccatoArray;
+			this.calcArticulationAccentArray;
+			this.resetArticulationMutation;
+			this.updateDict1;
+		};
+		paramDict[\regenFuncOrnamentation] = {
+			this.calcOrnamentationGraceNoteArray;
+			this.calcOrnamentationFigureArray;
+			this.resetOrnamentationMutation;
+			this.updateDict1;
+		};
+
 		// update the parameters
 		window.front;
 		this.textFunc;

@@ -16,11 +16,6 @@
 		paramDict[\mutatedArticulationAccentArray] = mutatedArticulationAccentArray;
 		paramDict[\mutatedOrnamentationGraceNoteArray] = mutatedOrnamentationGraceNoteArray;
 		paramDict[\mutatedOrnamentationFigureArray] = mutatedOrnamentationFigureArray;
-		paramDict[\pitchMutation] = pitchMutation;
-		paramDict[\velocityMutation] = velocityMutation;
-		paramDict[\octaveMutation] = octaveMutation;
-		paramDict[\articulationMutation] = articulationMutation;
-		paramDict[\ornamentationMutation] = ornamentationMutation;
 	}
 
 	updateDict2 {
@@ -59,6 +54,12 @@
 		paramDict[\articulationReset] = articulationReset;
 		paramDict[\ornamentationReset] = ornamentationReset;
 		paramDict[\timingReset] = timingReset;
+		// mutations
+		paramDict[\pitchMutation] = pitchMutation;
+		paramDict[\velocityMutation] = velocityMutation;
+		paramDict[\octaveMutation] = octaveMutation;
+		paramDict[\articulationMutation] = articulationMutation;
+		paramDict[\ornamentationMutation] = ornamentationMutation;
 		// arrays
 		paramDict[\timingArray] = timingArray;
 	}

@@ -578,6 +578,22 @@
 			});
 		});
 
+		p1MiniButtons.do({
+			arg button, index;
+			button.action_({
+				arg butt;
+				switch(index,
+					0, {paramDict[\regenFuncPitch].value;},
+					1, {paramDict[\regenFuncVelocity].value;},
+					2, {paramDict[\regenFuncOctave].value;},
+					3, {paramDict[\regenFuncArticulation].value;},
+					4, {paramDict[\regenFuncOrnamentation].value;},
+					5, {"timing does not regen!".postln;}
+				);
+				this.updateP1Plotters;
+			});
+		});
+
 		p1LabelLists.do({
 			arg list, index;
 			list.do({
