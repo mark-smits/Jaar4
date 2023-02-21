@@ -21,7 +21,12 @@ SequencerPrototype {
 
 	// class variables
     classvar
-	nothing;
+	globalWindowSaveStates,
+	saveStateButtons,
+	globalWindowPerformancePage,
+	performancePagePopUpMenus,
+	performancePageLabels,
+	performancePageCompViews;
 	// variables
 	var
 	// dataArrays
@@ -213,6 +218,96 @@ SequencerPrototype {
 		labelLists = [];
 		text = [];
 		window.view.decorator_(FlowLayout(window.bounds, 15@15, 10@10));
+
+		// save state window
+		globalWindowSaveStates = Window("Save States",  Rect(600, 50, 300, 260));
+		globalWindowSaveStates.view.decorator_(FlowLayout(globalWindowSaveStates.bounds, 15@15, 10@10));
+		saveStateButtons = [];
+		4.do({
+			|index|
+			4.do({
+				saveStateButtons = saveStateButtons ++
+				Button(globalWindowSaveStates, Rect(0, 0, 60, 20)).states_([
+				["save", Color.black, Color.cyan]
+				]).action_({ |butt|
+				"saved current configuration".postln;
+				});
+			});
+			4.do({
+				saveStateButtons = saveStateButtons ++
+				Button(globalWindowSaveStates, Rect(0, 0, 60, 20)).states_([
+				["load", Color.white, Color.blue]
+				]).action_({ |butt|
+				"loaded saved configuration".postln;
+				});
+			});
+		});
+
+		// performance page window
+		globalWindowPerformancePage = Window("Performance Page Parameters",  Rect(600, 350, 300, 380));
+		globalWindowPerformancePage.view.decorator_(FlowLayout(globalWindowPerformancePage.bounds, 15@15, 10@10));
+		performancePagePopUpMenus = [];
+		performancePageLabels = [];
+
+		4.do({
+			|index|
+			performancePageCompViews = performancePageCompViews ++ [
+				CompositeView(
+					globalWindowPerformancePage,
+					Rect(0, 0, 270, 80)).background_([Color.grey(0.3), Color.grey(0.5)].at(index.mod(2)) )];
+			performancePageCompViews[index].decorator_(FlowLayout(performancePageCompViews[index].bounds, 0@0, 10@0));
+
+			performancePageLabels = performancePageLabels ++ StaticText(performancePageCompViews[index], Rect(0, 0, 270, 20)).align_(\center).string_("Grouping:").stringColor_( [Color.white, Color.black].at(index.mod(2)) );
+			performancePagePopUpMenus = performancePagePopUpMenus ++
+			[{PopUpMenu(performancePageCompViews[index], Rect(0, 0, 60, 20))}!4];
+			performancePageLabels = performancePageLabels ++ StaticText(performancePageCompViews[index], Rect(0, 0, 270, 20)).align_(\center).string_("Parameter:").stringColor_( [Color.white, Color.black].at(index.mod(2)) );
+			performancePagePopUpMenus = performancePagePopUpMenus ++
+			[{PopUpMenu(performancePageCompViews[index], Rect(0, 0, 60, 20))}!4];
+		});
+
+		8.do({
+			|index|
+			4.do({
+				|index2|
+				// add items to lists
+				performancePagePopUpMenus[index][index2].items = [
+					[
+						"pitch", "velocity", "octave", "articulation", "ornamentation", "timing"
+					], [
+						"random", "steps", "confirming"
+					]
+				].at(index.mod(2));
+			});
+			if(index.mod(2) == 0, {
+				// update lists with parameters on group change
+				4.do({
+					|index2|
+					performancePagePopUpMenus[index][index2].action = {
+						|pmenu|
+						var oldval, newItems;
+						oldval = performancePagePopUpMenus[index+1][index2].value;
+						newItems = [
+							[
+								"random", "steps", "confirming"
+							], [
+								"density", "probability", "syncopation", "dynamics"
+							], [
+								"density", "probability", "offset"
+							], [
+								"slide", "staccato", "accent"
+							], [
+								"grace notes", "figures", "polyphony"
+							], [
+								"swing", "rubato"
+							]
+						].at(pmenu.value);
+						performancePagePopUpMenus[index+1][index2].items = newItems;
+						oldval = oldval.clip(0, newItems.size-1);
+						performancePagePopUpMenus[index+1][index2].valueAction = oldval;
+					};
+				});
+			});
+		});
 
 		// colors
 		activeColor = Color.grey(0.6);
@@ -445,6 +540,8 @@ SequencerPrototype {
 
 		// update the parameters
 		window.front;
+		globalWindowSaveStates.front;
+		globalWindowPerformancePage.front;
 		this.textFunc;
 		this.updatePlotters;
 

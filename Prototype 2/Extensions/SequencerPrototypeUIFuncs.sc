@@ -491,9 +491,11 @@
 				p1KnobLists[index][input].value = 1.0;
 				p1KnobVals[index][input] = 1.0;
 			});
+			p1MiniKnobs[index][0].value = 0.25;
+			p1MiniKnobs[index][1].value = 0.0;
 		});
 
-		// add actions to knobs
+		// add actions to knobs & buttons
 		p1KnobLists.do({
 			arg list, index;
 			list.do({
