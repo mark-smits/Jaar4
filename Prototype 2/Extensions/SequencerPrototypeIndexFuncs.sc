@@ -3,63 +3,63 @@
 	// functions for sequencing
 
 	tickIndices {
-		pitchIndex = (pitchIndex + 1).mod(pitchReset);
-		octaveIndex = (octaveIndex + 1).mod(octaveReset);
-		velocityIndex = (velocityIndex + 1).mod(velocityReset);
-		gateIndex = (gateIndex + 1).mod(gateReset); // will be deprecated
-		articulationIndex = (articulationIndex + 1).mod(articulationReset);
-		ornamentationIndex = (ornamentationIndex + 1).mod(ornamentationReset);
-		timingIndex = (timingIndex + 1).mod(timingReset);
+		paramDict[\pitchIndex] = (paramDict[\pitchIndex] + 1).mod(paramDict[\pitchReset]);
+		paramDict[\octaveIndex] = (paramDict[\octaveIndex] + 1).mod(paramDict[\octaveReset]);
+		paramDict[\velocityIndex] = (paramDict[\velocityIndex] + 1).mod(paramDict[\velocityReset]);
+		//paramDict[\gateIndex] = (paramDict[\gateIndex] + 1).mod(paramDict[\gateReset]); // will be deprecated
+		paramDict[\articulationIndex] = (paramDict[\articulationIndex] + 1).mod(paramDict[\articulationReset]);
+		paramDict[\ornamentationIndex] = (paramDict[\ornamentationIndex] + 1).mod(paramDict[\ornamentationReset]);
+		paramDict[\timingIndex] = (paramDict[\timingIndex] + 1).mod(paramDict[\timingReset]);
 	}
 
 	resetVelocityIndex {
 		// also seperately available if necessary due to syncopation
-		velocityIndex = 0;
+		paramDict[\velocityIndex] = 0;
 	}
 
 	resetIndices {
-		pitchIndex = 0;
-		octaveIndex = 0;
-		velocityIndex = 0;
-		gateIndex = 0; // will be deorecated
-		articulationIndex = 0;
-		ornamentationIndex = 0;
-		timingIndex = 0;
+		paramDict[\pitchIndex] = 0;
+		paramDict[\octaveIndex] = 0;
+		paramDict[\velocityIndex] = 0;
+		paramDict[\gateIndex] = 0; // will be deorecated
+		paramDict[\articulationIndex] = 0;
+		paramDict[\ornamentationIndex] = 0;
+		paramDict[\timingIndex] = 0;
 	}
 
 	setPitchReset {
 		arg reset;
-		pitchReset = reset.clip(1, 64);
+		paramDict[\pitchReset] = reset.clip(1, 64);
 	}
 
 	setOctaveReset {
 		arg reset;
-		octaveReset = reset.clip(1, 64);
+		paramDict[\octaveReset] = reset.clip(1, 64);
 	}
 
 	setVelocityReset {
 		arg reset;
-		velocityReset = reset.clip(1, 64);
+		paramDict[\velocityReset] = reset.clip(1, 64);
 	}
 
 	setGateReset { // will be deprecated
 		arg reset;
-		gateReset = reset.clip(1, 64);
+		paramDict[\gateReset] = reset.clip(1, 64);
 	}
 
 	setArticulationReset {
 		arg reset;
-		articulationReset = reset.clip(1, 64);
+		paramDict[\articulationReset] = reset.clip(1, 64);
 	}
 
 	setOrnamentationReset {
 		arg reset;
-		ornamentationReset = reset.clip(1, 64);
+		paramDict[\ornamentationReset] = reset.clip(1, 64);
 	}
 
 	setTimingReset {
 		arg reset;
-		timingReset = reset.clip(1, 64);
+		paramDict[\timingReset] = reset.clip(1, 64);
 	}
 
 	/*
@@ -93,38 +93,38 @@
 	handlePulse {
 		var trigger = false, note = nil;
 
-		if(ppqnPulse.mod(ppqnResolution/4) == ((ppqnResolution/4).asFloat * timingArray[timingIndex]).asInteger, {
-			((ppqnResolution/4).asFloat * timingArray[timingIndex]).asInteger;
+		if(ppqnPulse.mod(ppqnResolution/4) == ((ppqnResolution/4).asFloat * timingArray[paramDict[\timingIndex]]).asInteger, {
+			((ppqnResolution/4).asFloat * timingArray[paramDict[\timingIndex]]).asInteger;
 			// calc trigger
-			trigger = mutatedVelocityArray[ velocityDensity ][ velocityIndex ].asBoolean; // original trigger
+			trigger = mutatedVelocityArray[ paramDict[\velocityDensity] ][ paramDict[\velocityIndex] ].asBoolean; // original trigger
 			trigger = trigger.and(
-				mutatedVelocitySyncopationArray[ velocitySyncopation ][ velocityIndex ].asBoolean.not
+				mutatedVelocitySyncopationArray[ paramDict[\velocitySyncopation] ][ paramDict[\velocityIndex] ].asBoolean.not
 			); // syncopation filter
-			if(1.0.rand > velocityProbability, {
+			if(1.0.rand > paramDict[\velocityProbability], {
 				trigger = false;
 			}); // probability check
 			// if trigger play note
 			if(trigger, {
 				note = Dictionary.newFrom([
 					\pitch, this.translateTonality(
-						mutatedPitchArray[ pitchRandom ][ pitchIndex ],
-						mutatedPitchStepsArray[ pitchSteps ][ pitchIndex ],
-						mutatedPitchConfirmingArray[ pitchConfirming ][ pitchIndex ]
+						mutatedPitchArray[ paramDict[\pitchRandom] ][ paramDict[\pitchIndex] ],
+						mutatedPitchStepsArray[ paramDict[\pitchSteps] ][ paramDict[\pitchIndex] ],
+						mutatedPitchConfirmingArray[ paramDict[\pitchConfirming] ][ paramDict[\pitchIndex] ]
 					),
-					\vel, mutatedVelocityDynamicsArray[ velocityDynamics ][ velocityIndex ] * (1 + mutatedArticulationAccentArray[ articulationAccentDensity ][ articulationIndex ]),
+					\vel, mutatedVelocityDynamicsArray[ paramDict[\velocityDynamics] ][ paramDict[\velocityIndex] ] * (1 + mutatedArticulationAccentArray[ paramDict[\articulationAccentDensity] ][ paramDict[\articulationIndex] ]),
 					\slide, slideFlag,
 				]);
-				if(1.0.rand < octaveProbability, {
-					note[\pitch] = note[\pitch] + (mutatedOctaveArray[ octaveDensity ][ octaveIndex ] * 12);
+				if(1.0.rand < paramDict[\octaveProbability], {
+					note[\pitch] = note[\pitch] + (mutatedOctaveArray[ paramDict[\octaveDensity] ][ paramDict[\octaveIndex] ] * 12);
 				});
-				staccatoFlag = mutatedArticulationStaccatoArray[ articulationStaccatoDensity ][ articulationIndex ];
-				slideFlag = mutatedArticulationSlideArray[ articulationSlideDensity ][ articulationIndex ];
+				staccatoFlag = mutatedArticulationStaccatoArray[ paramDict[\articulationStaccatoDensity] ][ paramDict[\articulationIndex] ];
+				slideFlag = mutatedArticulationSlideArray[ paramDict[\articulationSlideDensity] ][ paramDict[\articulationIndex] ];
 				lastNote = note[\pitch];
 			});
 		});
 
 		if(note.isNil, {
-			if(ppqnPulse.mod(ppqnResolution/4) == ( ((ppqnResolution/4).asFloat*timingArray * timingArray[timingIndex] * 2 + 1)/3.0 ).asInteger, {
+			if(ppqnPulse.mod(ppqnResolution/4) == ( ((ppqnResolution/4).asFloat*timingArray * timingArray[paramDict[\timingIndex]] * 2 + 1)/3.0 ).asInteger, {
 				// kill staccato note
 				if(staccatoFlag.asBoolean, {
 					note = Dictionary.newFrom([

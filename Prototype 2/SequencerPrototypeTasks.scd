@@ -1,6 +1,6 @@
 r = Task({
 	var delta, count = 0, pulses = [nil, nil, nil, nil], slides = [0, 0, 0, 0], qncount = 0,
-	trigger_buffer = 0.1; // triggerbuffer is to counteract gate messages being ignored due to being send to close to eachother
+	trigger_buffer = 0.1; // triggerbuffer is to counteract gate messages being ignored due to being send too close to eachother
 	while {
 		delta = 60/130/~ppqn;
 		delta.notNil;

@@ -4,11 +4,11 @@
 
 	calcTimingArray {
 		timingArray = (0..15);
-		timingArray = sin(pi * timingArray/16)*timingRubato;
+		timingArray = sin(pi * timingArray/16)*paramDict[\timingRubato];
 		timingArray.do({
 			arg item, index;
 			if(index.mod(2) == 1, {
-				timingArray[index] = item + timingSwing;
+				timingArray[index] = item + paramDict[\timingSwing];
 			});
 			timingArray[index] = timingArray[index].pow(2.5);
 		});

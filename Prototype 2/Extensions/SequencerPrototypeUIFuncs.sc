@@ -2,6 +2,11 @@
 
 	// functions handling UI tasks
 
+	updatePlotters {
+		newUI.updateP1Plotters;
+	}
+
+	/*
 	setFocusColor {
 		arg index;
 		knobViews.do({
@@ -184,6 +189,7 @@
 		graceNotes = graceNotes + figures;
 		^[graceNotes, figures]*0.5;
 	}
+	*/
 }
 
 + SequencerUIPrototype {

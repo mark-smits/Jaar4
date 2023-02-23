@@ -158,32 +158,42 @@ SequencerPrototype {
 		newUI = SequencerUIPrototype.new;
 		newUI.init;
 
+		paramDict = Dictionary();
+
 		// initialize parameters
 
 		scale = [0, 2, 3, 5, 7, 8, 10, 12];
 
-		pitchRandom = (dimensionSize/2.0).floor;
-		pitchSteps = (dimensionSize/2.0).floor;
-		pitchConfirming = (dimensionSize/2.0).floor;
-		pitchTonality = (dimensionSize/2.0).floor;
-		octaveDensity = (dimensionSize/2.0).floor;
-		octaveProbability = (dimensionSize/2.0).floor;
-		velocitySyncopation = (dimensionSize/2.0).floor;
-		velocityAccent = (dimensionSize/2.0).floor; // will be deprecated
-		velocityDensity = (dimensionSize/2.0).floor;
-		velocityProbability = (dimensionSize/2.0).floor;
-		velocityDynamics = (dimensionSize/2.0).floor;
-		articulationStaccatoDensity = 0;
-		articulationSlideDensity = 0;
-		articulationAccentDensity = 0;
-		ornamentationGraceNotes = 0;
-		ornamentationFigures = 0;
-		ornamentationPolyphony = 0;
-		gateLength = (dimensionSize/2.0).floor; // will be deprecated
-		gateStaccatoDensity = (dimensionSize/2.0).floor; // will be deprecated
-		gateSlideDensity = (dimensionSize/2.0).floor; // will be deprecated
-		timingSwing = 0.0;
-		timingRubato = 0.0;
+		paramDict[\dimensionSize] = dimensionSize;
+		paramDict[\pitchRandom] = (dimensionSize/2.0).floor;
+		paramDict[\pitchSteps] = (dimensionSize/2.0).floor;
+		paramDict[\pitchConfirming] = (dimensionSize/2.0).floor;
+		paramDict[\pitchTonality] = (dimensionSize/2.0).floor;
+		paramDict[\octaveDensity] = (dimensionSize/2.0).floor;
+		paramDict[\octaveProbability] = (dimensionSize/2.0).floor;
+		paramDict[\velocitySyncopation] = (dimensionSize/2.0).floor;
+		paramDict[\velocityAccent] = (dimensionSize/2.0).floor; // will be deprecated
+		paramDict[\velocityDensity] = (dimensionSize/2.0).floor;
+		paramDict[\velocityProbability] = (dimensionSize/2.0).floor;
+		paramDict[\velocityDynamics] = (dimensionSize/2.0).floor;
+		paramDict[\articulationStaccatoDensity] = 0;
+		paramDict[\articulationSlideDensity] = 0;
+		paramDict[\articulationAccentDensity] = 0;
+		paramDict[\ornamentationGraceNotes] = 0;
+		paramDict[\ornamentationFigures] = 0;
+		paramDict[\ornamentationPolyphony] = 0;
+		paramDict[\gateLength] = (dimensionSize/2.0).floor; // will be deprecated
+		paramDict[\gateStaccatoDensity] = (dimensionSize/2.0).floor; // will be deprecated
+		paramDict[\gateSlideDensity] = (dimensionSize/2.0).floor; // will be deprecated
+		paramDict[\timingSwing] = 0.0;
+		paramDict[\timingRubato] = 0.0;
+
+		paramDict[\pitchReset] = 16;
+		paramDict[\velocityReset] = 16;
+		paramDict[\octaveReset] = 16;
+		paramDict[\articulationReset] = 16;
+		paramDict[\ornamentationReset] = 16;
+		paramDict[\timingReset] = 16;
 
 		// calculate arrays
 		this.calcPitchArray;
@@ -203,8 +213,10 @@ SequencerPrototype {
 		this.calcOrnamentationFigureArray;
 		this.calcTimingArray;
 		this.resetMutations;
+		this.resetIndices;
 
 		// generate UI
+		/*
 		window = Window("plot panel", Rect(20, 30, 540, 650));
 		GUI.skin.plot.background = Color.black;
 		GUI.skin.plot.gridColorX = Color.new(alpha: 0.0);
@@ -218,6 +230,7 @@ SequencerPrototype {
 		labelLists = [];
 		text = [];
 		window.view.decorator_(FlowLayout(window.bounds, 15@15, 10@10));
+		*/
 
 		// save state window
 		globalWindowSaveStates = Window("Save States",  Rect(600, 50, 300, 260));
@@ -309,6 +322,7 @@ SequencerPrototype {
 			});
 		});
 
+		/*
 		// colors
 		activeColor = Color.grey(0.6);
 		inactiveColor = Color.grey(0.3);
@@ -419,8 +433,10 @@ SequencerPrototype {
 				knobLists[index][input].value = 1.0;
 			});
 		});
+		*/
 
 		// add actions to knobs
+		/*
 		knobLists.do({
 			arg list, index;
 			list.do({
@@ -482,7 +498,9 @@ SequencerPrototype {
 				});
 			});
 		});
+		*/
 
+		/*
 		labelLists.do({
 			arg list, index;
 			list.do({
@@ -497,10 +515,10 @@ SequencerPrototype {
 				].at(index).at(index2);
 			});
 		});
+		*/
 
 		// test dictionary
-		paramDict = Dictionary();
-		this.updateDict1; this.updateDict2;
+		this.updateDictArrays; this.updateDictIndices;
 		newUI.passDict(paramDict);
 
 		// dictionary functions to regen values from the UI
@@ -509,12 +527,12 @@ SequencerPrototype {
 			this.calcPitchConfirming;
 			this.calcPitchSteps;
 			this.resetPitchMutation;
-			this.updateDict1;
+			this.updateDictArrays;
 		};
 		paramDict[\regenFuncOctave] = {
 			this.calcOctaveArray;
 			this.resetOctaveMutation;
-			this.updateDict1;
+			this.updateDictArrays;
 		};
 		paramDict[\regenFuncVelocity] = {
 			this.calcVelocityArray;
@@ -522,28 +540,28 @@ SequencerPrototype {
 			this.calcVelocitySyncopationArray;
 			this.calcVelocityDynamicsArray;
 			this.resetVelocityMutation;
-			this.updateDict1;
+			this.updateDictArrays;
 		};
 		paramDict[\regenFuncArticulation] = {
 			this.calcArticulationSlideArray;
 			this.calcArticulationStaccatoArray;
 			this.calcArticulationAccentArray;
 			this.resetArticulationMutation;
-			this.updateDict1;
+			this.updateDictArrays;
 		};
 		paramDict[\regenFuncOrnamentation] = {
 			this.calcOrnamentationGraceNoteArray;
 			this.calcOrnamentationFigureArray;
 			this.resetOrnamentationMutation;
-			this.updateDict1;
+			this.updateDictArrays;
 		};
 
 		// update the parameters
-		window.front;
+		//window.front;
 		globalWindowSaveStates.front;
 		globalWindowPerformancePage.front;
-		this.textFunc;
-		this.updatePlotters;
+		//this.textFunc;
+		//this.updatePlotters;
 
 		newUI.updateP1Plotters;
 	}
@@ -606,6 +624,8 @@ SequencerPrototype {
 		root = rootIn.mod(12);
 		scale = scaleIn.mod(12);
 	}
+
+	/*
 
 	setPitchRandom {
 		arg value; // expects 0.0-1.0 value
@@ -811,6 +831,8 @@ SequencerPrototype {
 		"timingRubato set to: ".post; timingRubato.postln;
 		this.calcTimingArray;
 	}
+
+	*/
 
 	setMutations {
 		arg pitch, vel, oct, art, orn; // these are solely for the UI
