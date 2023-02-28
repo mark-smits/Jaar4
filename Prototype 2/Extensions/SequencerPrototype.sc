@@ -65,6 +65,21 @@ SequencerPrototype {
 	mutatedOrnamentationGraceNoteArray,
 	mutatedOrnamentationFigureArray,
 	mutatedTimingArray,
+	// ouput locked arrays
+	lockedPitchArray,
+	lockedVelocityArray,
+	lockedOctaveArray,
+	lockedArticulationArray,
+	lockedOrnamentationArray,
+	lockedTimingArray,
+	/*
+	lockedPitchPositionsArray,
+	lockedVelocityPositionsArray,
+	lockedOctavePositionsArray,
+	lockedArticulationPositionsArray,
+	lockedOrnamentationPositionsArray,
+	lockedTimingPositionsArray,
+	*/
 	// dimensions (0-15)
 	dimensionSize = 15,
 	pitchRandom,
@@ -195,6 +210,20 @@ SequencerPrototype {
 		paramDict[\ornamentationReset] = 16;
 		paramDict[\timingReset] = 16;
 
+		paramDict[\lockedPitchPositionsArray] = 0!16;
+		paramDict[\lockedVelocityPositionsArray] = 0!16;
+		paramDict[\lockedOctavePositionsArray] = 0!16;
+		paramDict[\lockedArticulationPositionsArray] = 0!16;
+		paramDict[\lockedOrnamentationPositionsArray] = 0!16;
+		paramDict[\lockedTimingPositionsArray] = 0!16;
+
+		paramDict[\pitchLockPulses] = 0; paramDict[\pitchLockRotation] = 0; paramDict[\pitchSequenceReset] = 16;
+		paramDict[\velocityLockPulses] = 0; paramDict[\velocityLockRotation] = 0; paramDict[\velocitySequenceReset] = 16;
+		paramDict[\octaveLockPulses] = 0; paramDict[\octaveLockRotation] = 0; paramDict[\octaveSequenceReset] = 16;
+		paramDict[\articulationLockPulses] = 0; paramDict[\articulationLockRotation] = 0; paramDict[\articulationSequenceReset] = 16;
+		paramDict[\ornamentationLockPulses] = 0; paramDict[\ornamentationLockRotation] = 0; paramDict[\ornamentationSequenceReset] = 16;
+		paramDict[\timingLockPulses] = 0; paramDict[\timingLockRotation] = 0; paramDict[\timingSequenceReset] = 16;
+
 		// calculate arrays
 		this.calcPitchArray;
 		this.calcPitchConfirming;
@@ -215,22 +244,7 @@ SequencerPrototype {
 		this.resetMutations;
 		this.resetIndices;
 
-		// generate UI
-		/*
-		window = Window("plot panel", Rect(20, 30, 540, 650));
-		GUI.skin.plot.background = Color.black;
-		GUI.skin.plot.gridColorX = Color.new(alpha: 0.0);
-		GUI.skin.plot.gridColorY = Color.new(alpha: 0.0);
-		GUI.skin.plot.fontColor = Color.new(alpha: 0.0);
-		sliders = [];
-		compositeViews = [];
-		plotters = [];
-		knobViews = [];
-		knobLists = [];
-		labelLists = [];
-		text = [];
-		window.view.decorator_(FlowLayout(window.bounds, 15@15, 10@10));
-		*/
+		// generate UI = outsourced
 
 		// save state window
 		globalWindowSaveStates = Window("Save States",  Rect(600, 50, 300, 260));
@@ -322,201 +336,6 @@ SequencerPrototype {
 			});
 		});
 
-		/*
-		// colors
-		activeColor = Color.grey(0.6);
-		inactiveColor = Color.grey(0.3);
-		stepColor = Color.white;
-		probabilityActiveColor = Color.new(0, 1, 1, 0.5); // Color.grey(0.75, 0.5); // these should have been thinner bars with alpha 1.0
-		probabilityInactiveColor = Color.grey(0.4, 0.5);
-		bipolarPositiveColor1 = Color.fromHexString("#CF5F3A");
-		bipolarNegativeColor1 = Color.fromHexString("#0F4557");
-		bipolarPositiveColor2 = Color.fromHexString("#EBBC6F");
-		bipolarNegativeColor2 = Color.fromHexString("#361D2E");
-		articulationColor1 = Color.fromHexString("#4F5D2F");
-		articulationColor2 = Color.fromHexString("#EBBC6F");
-		articulationColor3 = Color.fromHexString("#361D2E");
-
-		colorLists = [ // general structure: step color, value colors, probability colors, macro colors
-			[stepColor, activeColor, bipolarNegativeColor2, bipolarPositiveColor2, bipolarNegativeColor1, bipolarPositiveColor1], // pitch
-			[stepColor, activeColor, inactiveColor, probabilityActiveColor, probabilityInactiveColor], // velocity
-			[stepColor, activeColor, probabilityActiveColor, probabilityInactiveColor], // octaves
-			[stepColor, articulationColor1, articulationColor2, articulationColor3], // articulation
-			[stepColor, articulationColor1, articulationColor2], // ornamentation
-			[stepColor, activeColor], // timing
-		];
-
-		3.do({
-			|index|
-
-			// add titles
-			2.do({
-				|index2|
-				text = text ++ TextView(window, Rect(
-					globalMargin + ((index/3).floor * (titleWidth + globalMargin)),
-					25 + (125*index.mod(3)),
-					titleWidth,
-					20));
-				text[2 * index + index2].setString("test");
-			});
-
-			// add graphs
-			2.do({
-				|index2|
-				compositeViews = compositeViews ++ [
-					CompositeView(
-						window,
-						Rect(
-							0, //globalMargin + ((index/3).floor * (plotWidth + globalMargin) ),
-							0, //50 + (125*index.mod(3)),
-							plotWidth,
-							plotHeight)
-				).background_(Color.black).resize_(5)];
-
-				plotters = plotters ++ [Plotter("plot", parent: compositeViews[2 * index + index2]).plotMode = \bars];
-				plotters[2 * index + index2].value = [ 0!64, ({1.0.rand}!64 ++ [0]) ];
-				plotters[2 * index + index2].plotColor = colorLists[2 * index + index2];
-				plotters[2 * index + index2].superpose_(true);
-				plotters[2 * index + index2].minval = 0;
-			});
-
-			// add knobs
-			2.do({
-				|index2|
-				knobViews = knobViews ++ [
-					CompositeView(
-						window,
-						Rect(0, 0, plotWidth, 85)
-					).background_(Color.grey).resize_(5);
-				];
-				knobViews[2 * index + index2].decorator_(
-					FlowLayout(knobViews[2 * index + index2].bounds, (plotWidth - 30 - (knobSize * 4))/2@10, 10@10)
-				);
-				knobLists = knobLists ++ [{Knob.new(
-					knobViews[2 * index + index2],
-					Rect(0, 0, knobSize, knobSize))
-				.action_({ |ez| ("value: " ++ ez.value.asString).postln })
-				.mode_(\vert)
-				.value_(0.5)
-				}!4];
-
-				labelLists = labelLists ++ [{TextView(
-					knobViews[2 * index + index2],
-					Rect(0, 0, labelWidth, labelHeight)
-				)}!4];
-			});
-		});
-
-		// change some knob values
-		6.do({
-			|index|
-			[
-				[3],
-				[],
-				[2, 3],
-				[0, 1, 2, 3],
-				[0, 1, 2, 3],
-				[0, 1, 2, 3],
-			].at(index).do({
-				|input, index2|
-				knobLists[index][input].value = 0.0;
-			});
-			[
-				[],
-				[1],
-				[1],
-				[],
-				[],
-				[],
-			].at(index).do({
-				|input, index2|
-				knobLists[index][input].value = 1.0;
-			});
-		});
-		*/
-
-		// add actions to knobs
-		/*
-		knobLists.do({
-			arg list, index;
-			list.do({
-				arg knob, index2;
-				var func;
-				func = {};
-				switch(index,
-					0, {
-						// pitch
-						switch(index2,
-							0, { func = {|val| this.pitchRandKnobFunc(val)}; },
-							1, { func = {|val| this.pitchStepsKnobFunc(val)}; },
-							2, { func = {|val| this.pitchConfirmingKnobFunc(val)}; },
-						)
-					},
-					1, {
-						// velocity
-						switch(index2,
-							0, { func = {|val| this.velocityDensityKnobFunc(val)}; },
-							1, { func = {|val| this.velocityProbabilityKnobFunc(val)}; },
-							2, { func = {|val| this.velocitySyncopationKnobFunc(val)}; },
-							3, { func = {|val| this.velocityDynamicsKnobFunc(val)}; },
-						)
-					},
-					2, {
-						// octaves
-						switch(index2,
-							0, { func = {|val| this.octaveDensityKnobFunc(val)}; },
-							1, { func = {|val| this.octaveProbabilityKnobFunc(val)}; },
-							3, { func = {|val| this.octaveOffsetKnobFunc(val)}; },
-						)
-					},
-					3, {
-						// articulation
-						switch(index2,
-							0, { func = {|val| this.articulationStaccatoKnobFunc(val)}; },
-							1, { func = {|val| this.articulationSlideKnobFunc(val)}; },
-							2, { func = {|val| this.articulationAccentKnobFunc(val)}; },
-						)
-					},
-					4, {
-						// ornamentation
-						switch(index2,
-							0, { func = {|val| this.ornamentationGraceNoteKnobFunc(val)}; },
-							1, { func = {|val| this.ornamentationFigureKnobFunc(val)}; },
-						)
-					},
-					5, {
-						// timing
-						switch(index2,
-							0, { func = {|val| this.timingSwingKnobFunc(val)}; },
-							1, { func = {|val| this.timingRubatoKnobFunc(val)}; },
-						)
-					},
-				);
-				knob.action_({
-					|knobSelf|
-					func.value(knobSelf.value);
-				});
-			});
-		});
-		*/
-
-		/*
-		labelLists.do({
-			arg list, index;
-			list.do({
-				arg label, index2;
-				label.string = [
-					["rand", "steps", "conf", ""],
-					["dens", "prob", "sync", "dyn"],
-					["dens", "prob", "", "offset"],
-					["stac", "slide", "acc", ""],
-					["gr n", "fig", "poly", ""],
-					["swing", "rub", "", ""],
-				].at(index).at(index2);
-			});
-		});
-		*/
-
 		// test dictionary
 		this.updateDictArrays; this.updateDictIndices;
 		newUI.passDict(paramDict);
@@ -555,18 +374,31 @@ SequencerPrototype {
 			this.resetOrnamentationMutation;
 			this.updateDictArrays;
 		};
+		paramDict[\regenFuncPitchLocks] = {
+			this.updatePitchLocks;
+		};
+		paramDict[\regenFuncVelocityLocks] = {
+			this.updateVelocityLocks;
+		};
+		paramDict[\regenFuncOctaveLocks] = {
+			this.updateOctaveLocks;
+		};
+		paramDict[\regenFuncArticulationLocks] = {
+			this.updateArticulationLocks;
+		};
+		paramDict[\regenFuncOrnamentationLocks] = {
+			this.updateOrnamentationLocks;
+		};
+		paramDict[\regenFuncTimingLocks] = {
+			this.updateTimingLocks;
+		};
 
 		// update the parameters
-		//window.front;
 		globalWindowSaveStates.front;
 		globalWindowPerformancePage.front;
-		//this.textFunc;
-		//this.updatePlotters;
 
-		newUI.updateP1Plotters;
+		newUI.updateP1Plotters; newUI.updateP3Plotters;
 	}
-
-	// calculations offloaded to seperate file
 
 	// getters
 	getPitchArray {

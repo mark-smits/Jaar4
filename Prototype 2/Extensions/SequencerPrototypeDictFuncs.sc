@@ -150,4 +150,25 @@
 		paramDict[\articulationMutation] = (4.0*p1MiniKnobVals[3][1] - 0.001).asInteger;
 		paramDict[\ornamentationMutation] = (4.0*p1MiniKnobVals[4][1] - 0.001).asInteger;
 	}
+
+	updateDictLocks {
+		paramDict[\pitchLockPulses] = p3MiniKnobVals[0][0];
+		paramDict[\pitchLockRotation] = p3MiniKnobVals[0][1];
+		paramDict[\pitchSequenceReset] = (63.99*p3MiniKnobVals[0][2]+1).asInteger;
+		paramDict[\velocityLockPulses] = p3MiniKnobVals[1][0];
+		paramDict[\velocityLockRotation] = p3MiniKnobVals[1][1];
+		paramDict[\velocitySequenceReset] = (63.99*p3MiniKnobVals[1][2]+1).asInteger;
+		paramDict[\octaveLockPulses] = p3MiniKnobVals[2][0];
+		paramDict[\octaveLockRotation] = p3MiniKnobVals[2][1];
+		paramDict[\octaveSequenceReset] =(63.99* p3MiniKnobVals[2][2]+1).asInteger;
+		paramDict[\articulationLockPulses] = p3MiniKnobVals[3][0];
+		paramDict[\articulationLockRotation] = p3MiniKnobVals[3][1];
+		paramDict[\articulationSequenceReset] = (63.99*p3MiniKnobVals[3][2]+1).asInteger;
+		paramDict[\ornamentationLockPulses] = p3MiniKnobVals[4][0];
+		paramDict[\ornamentationLockRotation] = p3MiniKnobVals[4][1];
+		paramDict[\ornamentationSequenceReset] = (63.99*p3MiniKnobVals[4][2]+1).asInteger;
+		paramDict[\timingLockPulses] = p3MiniKnobVals[5][0];
+		paramDict[\timingLockRotation] = p3MiniKnobVals[5][1];
+		paramDict[\timingSequenceReset] = (63.99*p3MiniKnobVals[5][2]+1).asInteger;
+	}
 }

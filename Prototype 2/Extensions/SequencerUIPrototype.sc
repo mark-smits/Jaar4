@@ -35,7 +35,7 @@ SequencerUIPrototype {
 	p3KnobVals,
 	p3MiniKnobs,
 	p3MiniKnobVals,
-	p3MiniButtons,
+	//p3MiniButtons,
 
 	p4Text,
 	p4CompositeViews,
@@ -55,7 +55,7 @@ SequencerUIPrototype {
 	labelHeight = 20, labelWidth = 35,
 	plotSpacing = 10, globalMargin = 10,
 	// colors
-	activeColor, inactiveColor, stepColor,
+	lockColor, activeColor, inactiveColor, stepColor,
 	bipolarPositiveColor1, bipolarNegativeColor1,
 	bipolarPositiveColor2, bipolarNegativeColor2,
 	articulationColor1, articulationColor2, articulationColor3,
@@ -116,7 +116,6 @@ SequencerUIPrototype {
 		this.initPage1;
 		this.initPage3;
 		this.initPage4;
-		p1KnobVals.postln;
 
 		window.front;
 		window.refresh;
