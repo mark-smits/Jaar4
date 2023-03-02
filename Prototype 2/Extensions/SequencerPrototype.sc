@@ -186,6 +186,7 @@ SequencerPrototype {
 		paramDict[\pitchTonality] = (dimensionSize/2.0).floor;
 		paramDict[\octaveDensity] = (dimensionSize/2.0).floor;
 		paramDict[\octaveProbability] = (dimensionSize/2.0).floor;
+		paramDict[\octaveOffset] = 48;
 		paramDict[\velocitySyncopation] = (dimensionSize/2.0).floor;
 		paramDict[\velocityAccent] = (dimensionSize/2.0).floor; // will be deprecated
 		paramDict[\velocityDensity] = (dimensionSize/2.0).floor;
@@ -372,6 +373,10 @@ SequencerPrototype {
 			this.calcOrnamentationGraceNoteArray;
 			this.calcOrnamentationFigureArray;
 			this.resetOrnamentationMutation;
+			this.updateDictArrays;
+		};
+		paramDict[\regenFuncTiming] = {
+			this.calcTimingArray;
 			this.updateDictArrays;
 		};
 		paramDict[\regenFuncPitchLocks] = {

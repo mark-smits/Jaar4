@@ -26,6 +26,9 @@ SequencerUIPrototype {
 	p1MiniKnobVals,
 	p1MiniButtons,
 
+	p2CompositeViews,
+	p2Plotters,
+
 	p3Text,
 	p3CompositeViews,
 	p3Plotters,

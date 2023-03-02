@@ -66,6 +66,8 @@
 				paramDict[\lockedOrnamentationPositionsArray],
 				paramDict[\lockedTimingPositionsArray],
 			].at(index);
+			locks = locks.at( (0..(size-1)) );
+
 			values = [(locks ++ [0])] ++ values;
 
 			p1Plotters[index].value = values;
@@ -338,6 +340,9 @@
 					|knobSelf|
 					func.value(knobSelf.value);
 					p1KnobVals[index][index2].postln;
+					if(index == 5, {
+						paramDict[\regenFuncTiming].value;
+					});
 					this.updateDict;
 					this.updateP1Plotters;
 				});
@@ -395,6 +400,7 @@
 	initPage2 {
 		// generate UI
 		pageCompositeViews[1].asView.decorator_(FlowLayout(pageCompositeViews[0].bounds, 0@0, 10@10));
+		p2CompositeViews = [];
 	}
 
 	updateP3Plotters {

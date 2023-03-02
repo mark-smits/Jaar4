@@ -74,7 +74,6 @@ r = Task({
 
 			// update voices
 			if(pulses[index].isNil.not, {
-
 				if(pulses[index][\vel] == 0, {
 					// staccato check for synth 1 & 2
 					if(index < 2, {

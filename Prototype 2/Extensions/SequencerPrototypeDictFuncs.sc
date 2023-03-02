@@ -85,7 +85,7 @@
 		paramDict[\pitchConfirming] = (paramDict[\dimensionSize]*p1KnobVals[0][2] - 0.001).asInteger;
 		//paramDict[\pitchTonality] = pitchTonality;
 		paramDict[\octaveDensity] = (paramDict[\dimensionSize]*p1KnobVals[2][0] - 0.001).asInteger;
-		paramDict[\octaveProbability] = (paramDict[\dimensionSize]*p1KnobVals[2][1] - 0.001).asInteger;
+		paramDict[\octaveProbability] = p1KnobVals[2][1];
 		paramDict[\octaveOffset] = [24, 36, 48, 60, 72].at((4.999*p1KnobVals[2][3]).asInteger);
 		paramDict[\velocitySyncopation] = (paramDict[\dimensionSize]*p1KnobVals[1][2] - 0.001).asInteger;
 		paramDict[\velocityDensity] = (paramDict[\dimensionSize]*p1KnobVals[1][0] - 0.001).asInteger;
