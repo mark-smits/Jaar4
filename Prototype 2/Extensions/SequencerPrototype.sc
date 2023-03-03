@@ -398,6 +398,13 @@ SequencerPrototype {
 			this.updateTimingLocks;
 		};
 
+		this.updatePitchLocks;
+		this.updateVelocityLocks;
+		this.updateOctaveLocks;
+		this.updateArticulationLocks;
+		this.updateOrnamentationLocks;
+		this.updateTimingLocks;
+
 		// update the parameters
 		globalWindowSaveStates.front;
 		globalWindowPerformancePage.front;

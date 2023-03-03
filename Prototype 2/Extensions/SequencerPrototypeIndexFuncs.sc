@@ -94,31 +94,71 @@
 		var trigger = false, note = nil;
 
 		if(ppqnPulse.mod(ppqnResolution/4) == ((ppqnResolution/4).asFloat * timingArray[paramDict[\timingIndex]]).asInteger, {
-			((ppqnResolution/4).asFloat * timingArray[paramDict[\timingIndex]]).asInteger;
+			// a step triggers to calculate
+
 			// calc trigger
-			trigger = mutatedVelocityArray[ paramDict[\velocityDensity] ][ paramDict[\velocityIndex] ].asBoolean; // original trigger
-			trigger = trigger.and(
-				mutatedVelocitySyncopationArray[ paramDict[\velocitySyncopation] ][ paramDict[\velocityIndex] ].asBoolean.not
-			); // syncopation filter
-			if(1.0.rand > paramDict[\velocityProbability], {
-				trigger = false;
-			}); // probability check
+			if(paramDict[\lockedVelocityPositionsArray][ paramDict[\velocityIndex] ].asBoolean, {
+				if(lockedVelocityArray[ paramDict[\velocityIndex] ] > 0, {
+					trigger = true;
+				}, {
+					trigger = false;
+				});
+			}, {
+				trigger = mutatedVelocityArray[ paramDict[\velocityDensity] ][ paramDict[\velocityIndex] ].asBoolean; // original trigger
+				trigger = trigger.and(
+					mutatedVelocitySyncopationArray[ paramDict[\velocitySyncopation] ][ paramDict[\velocityIndex] ].asBoolean.not
+				); // syncopation filter
+				if(1.0.rand > paramDict[\velocityProbability], {
+					trigger = false;
+				}); // probability check
+			});
 			// if trigger play note
 			if(trigger, {
-				note = Dictionary.newFrom([
-					\pitch, this.translateTonality(
+				var pitch, vel, oct, accent, staccato, slide;
+
+				if(paramDict[\lockedPitchPositionsArray][ paramDict[\pitchIndex] ].asBoolean, {
+					pitch = lockedPitchArray[ paramDict[\pitchIndex] ];
+				}, {
+					pitch = this.translateTonality(
 						mutatedPitchArray[ paramDict[\pitchRandom] ][ paramDict[\pitchIndex] ],
 						mutatedPitchStepsArray[ paramDict[\pitchSteps] ][ paramDict[\pitchIndex] ],
 						mutatedPitchConfirmingArray[ paramDict[\pitchConfirming] ][ paramDict[\pitchIndex] ]
-					),
-					\vel, mutatedVelocityDynamicsArray[ paramDict[\velocityDynamics] ][ paramDict[\velocityIndex] ] * (1 + mutatedArticulationAccentArray[ paramDict[\articulationAccentDensity] ][ paramDict[\articulationIndex] ]),
+					);
+				});
+
+				if(paramDict[\lockedVelocityPositionsArray][ paramDict[\velocityIndex] ].asBoolean, {
+					vel = lockedVelocityArray[ paramDict[\velocityIndex] ];
+				}, {
+					vel = mutatedVelocityDynamicsArray[ paramDict[\velocityDynamics] ][ paramDict[\velocityIndex] ];
+				});
+
+				if(paramDict[\lockedOctavePositionsArray][ paramDict[\octaveIndex] ].asBoolean, {
+					oct = lockedOctaveArray[ paramDict[\octaveIndex] ];
+				}, {
+					oct = 0;
+					if(1.0.rand < paramDict[\octaveProbability], {
+						oct = oct + mutatedOctaveArray[ paramDict[\octaveDensity] ][ paramDict[\octaveIndex] ];
+					});
+				});
+
+				if(paramDict[\lockedArticulationPositionsArray][ paramDict[\articulationIndex] ].asBoolean, {
+					staccato = lockedArticulationArray[0][ paramDict[\articulationIndex] ];
+					slide = lockedArticulationArray[1][ paramDict[\articulationIndex] ];
+					accent = lockedArticulationArray[2][ paramDict[\articulationIndex] ];
+				}, {
+					accent = mutatedArticulationAccentArray[ paramDict[\articulationAccentDensity] ][ paramDict[\articulationIndex] ];
+					staccato = mutatedArticulationStaccatoArray[ paramDict[\articulationStaccatoDensity] ][ paramDict[\articulationIndex] ];
+					slide = mutatedArticulationSlideArray[ paramDict[\articulationSlideDensity] ][ paramDict[\articulationIndex] ];
+				});
+
+				note = Dictionary.newFrom([
+					\pitch, pitch + paramDict[\octaveOffset],
+					\vel, vel * (1 + accent),
 					\slide, slideFlag,
 				]);
-				if(1.0.rand < paramDict[\octaveProbability], {
-					note[\pitch] = note[\pitch] + (mutatedOctaveArray[ paramDict[\octaveDensity] ][ paramDict[\octaveIndex] ] * 12);
-				});
-				staccatoFlag = mutatedArticulationStaccatoArray[ paramDict[\articulationStaccatoDensity] ][ paramDict[\articulationIndex] ];
-				slideFlag = mutatedArticulationSlideArray[ paramDict[\articulationSlideDensity] ][ paramDict[\articulationIndex] ];
+				note[\pitch] = note[\pitch] + (oct * 12);
+				staccatoFlag = staccato;
+				slideFlag = slide;
 				lastNote = note[\pitch];
 			});
 		});

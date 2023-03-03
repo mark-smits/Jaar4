@@ -47,8 +47,10 @@
 			|index|
 			lockedVelocityArray[index] = mutatedVelocityDynamicsArray[ paramDict[\velocityDynamics] ][ index ] *
 			mutatedVelocityArray[ paramDict[\velocityDensity] ][ index ] *
-			mutatedVelocitySyncopationArray[ paramDict[\velocitySyncopation] ][ index ];
+			(1-mutatedVelocitySyncopationArray[ paramDict[\velocitySyncopation] ][ index ]);
 		});
+		paramDict[\lockedVelocityPositionsArray].postln;
+		lockedVelocityArray.postln;
 	}
 
 	updateOctaveLocks {

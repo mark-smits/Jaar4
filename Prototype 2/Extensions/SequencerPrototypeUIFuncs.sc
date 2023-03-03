@@ -304,7 +304,7 @@
 			[
 				[3],
 				[],
-				[2, 3],
+				[2],
 				[0, 1, 2, 3],
 				[0, 1, 2, 3],
 				[0, 1, 2, 3],
@@ -355,11 +355,22 @@
 				arg knob, index2;
 				var func;
 				func = {|val| p1MiniKnobVals[index][index2] = val};
+				knob.keystep = [1/63.0, 1/3.0].at(index2);
 				knob.action_({
 					|knobSelf|
 					func.value(knobSelf.value);
-					p1MiniKnobVals[index][index2].postln;
 					this.updateDict;
+					if(index2 == 0, {
+						// update locks on pattern length change
+						switch(index,
+							0, {paramDict[\regenFuncPitchLocks].value;},
+							1, {paramDict[\regenFuncVelocityLocks].value;},
+							2, {paramDict[\regenFuncOctaveLocks].value;},
+							3, {paramDict[\regenFuncArticulationLocks].value;},
+							4, {paramDict[\regenFuncOrnamentationLocks].value;},
+							5, {paramDict[\regenFuncTimingLocks].value;}
+						);
+					});
 					this.updateP1Plotters;
 				});
 			});

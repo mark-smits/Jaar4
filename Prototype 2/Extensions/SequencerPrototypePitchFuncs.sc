@@ -103,7 +103,7 @@
 			});
 		});
 
-		note = root + paramDict[\octaveOffset] + scale[index];
+		note = root + scale[index];
 		lastPitchIndex = index;
 		^note;
 	}
