@@ -10,6 +10,47 @@ SynthDef.new(\mixer, {
 	sig, echo_dry, echo_wet, echo1, echo2, echo3, wow_flutter_lfo,
 	reverb_dry, preProcess, springReso, reverb_wet;
 
+	// lag all inputs
+	lvl1 = Lag.kr(lvl1, 0.005);
+	lvl2 = Lag.kr(lvl2, 0.005);
+	lvl3 = Lag.kr(lvl3, 0.005);
+	lvl4 = Lag.kr(lvl4, 0.005);
+	lvl5 = Lag.kr(lvl5, 0.005);
+	lvl6 = Lag.kr(lvl6, 0.005);
+
+	chor1 = Lag.kr(chor1, 0.005);
+	chor2 = Lag.kr(chor2, 0.005);
+	chor3 = Lag.kr(chor3, 0.005);
+	chor4 = Lag.kr(chor4, 0.005);
+	chor5 = Lag.kr(chor5, 0.005);
+	chor6 = Lag.kr(chor6, 0.005);
+
+	filt1 = Lag.kr(filt1, 0.005);
+	filt2 = Lag.kr(filt2, 0.005);
+	filt3 = Lag.kr(filt3, 0.005);
+	filt4 = Lag.kr(filt4, 0.005);
+	filt5 = Lag.kr(filt5, 0.005);
+	filt6 = Lag.kr(filt6, 0.005);
+
+	ec_s1 = Lag.kr(ec_s1, 0.005);
+	ec_s2 = Lag.kr(ec_s2, 0.005);
+	ec_s3 = Lag.kr(ec_s3, 0.005);
+	ec_s4 = Lag.kr(ec_s4, 0.005);
+	ec_s5 = Lag.kr(ec_s5, 0.005);
+	ec_s6 = Lag.kr(ec_s6, 0.005);
+
+	rv_s1 = Lag.kr(rv_s1, 0.005);
+	rv_s2 = Lag.kr(rv_s2, 0.005);
+	rv_s3 = Lag.kr(rv_s3, 0.005);
+	rv_s4 = Lag.kr(rv_s4, 0.005);
+	rv_s5 = Lag.kr(rv_s5, 0.005);
+	rv_s6 = Lag.kr(rv_s6, 0.005);
+
+	predelay = Lag.kr(predelay, 0.005);
+	echo_fb = Lag.kr(echo_fb, 0.005);
+	echo_time = Lag.kr(echo_time, 0.005);
+	wow_flutter = Lag.kr(wow_flutter, 0.005);
+
 	// input
 
 	in1 = In.ar(chan1_in, 2) * lvl1;
@@ -104,7 +145,36 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 	vca_attack = 0.0005, vca_decay = 1, vca_sustain = 0, vca_release = 1, // vca env
 	mod_attack = 0.0005, mod_decay = 1, lfo_rate = 1, lfo_shape = 0, mod_balance = 0.5, // mod params
 	pwm_amount = 0, sync_amount = 0, freq_amount = 0, ffreq_amount = 0; // mod destinations
-	var sig, mod, sub_freq, saw, pulse, sub, vca_env, vcf_env, mod_env, kill_env, lfo;
+	var sig, mod, sub_freq, saw, pulse, sub, vca_env, vcf_env, mod_env, kill_env, lfo, mainOscDriftLfo, subOscDriftLfo;
+
+	// lag inputs
+	fm_index = Lag.kr(fm_index, 0.005);
+	sync = Lag.kr(sync, 0.005);
+	pw = Lag.kr(pw, 0.005);
+	vco_balance = Lag.kr(vco_balance, 0.005);
+	vco_pitch = Lag.kr(vco_pitch, 0.005);
+	sub_amp = Lag.kr(sub_amp, 0.005);
+	filter_freq = Lag.kr(filter_freq, 0.005);
+	filter_res = Lag.kr(filter_res, 0.005);
+	filter_env_amount = Lag.kr(filter_env_amount, 0.005);
+	fuzz_drive = Lag.kr(fuzz_drive, 0.005);
+	mod_balance = Lag.kr(mod_balance, 0.005);
+	pwm_amount = Lag.kr(pwm_amount, 0.005);
+	sync_amount = Lag.kr(sync_amount, 0.005);
+	freq_amount = Lag.kr(freq_amount, 0.005);
+	ffreq_amount = Lag.kr(ffreq_amount, 0.005);
+
+	// analogify
+	mainOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.001,
+		add: 1
+	);
+	subOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.0008,
+		add: 1
+	);
 
 	// control sources
 	vca_env = EnvGen.ar(
@@ -142,9 +212,9 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 
 	// audio processing
 	freq = Lag.kr(freq, 0.005 + portamento);
-	sub_freq = freq * 2.pow(sub_oct);
+	sub_freq = freq * 2.pow(sub_oct) * subOscDriftLfo;
 	freq = freq * 2.pow(vco_pitch/12) * LinExp.kr(mod*freq_amount, 0, 1, 1, 2)
-	* SinOsc.ar(freq, mul: fm_index*fm_on, add: 1);
+	* SinOsc.ar(freq, mul: fm_index*fm_on, add: 1) * mainOscDriftLfo;
 	// oscillators
 	saw = SyncSaw.ar(
 		freq,
@@ -160,9 +230,9 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 	sig = SelectX.ar(sub_amp*0.5, [sig, sub]);
 	// filtering
 	filter_freq = filter_freq * LinExp.ar((filter_env_amount * vcf_env) + (ffreq_amount * mod), 0, 1, 1, 2);
-	sig = RLPFD.ar(sig, filter_freq, filter_res, 0, 3);
+	sig = RLPFD.ar(sig, filter_freq.clip(20, 20000), filter_res, 0, 3.5);
 	sig = Select.ar(fuzz_on, [
-		sig * vca_env, ( (sig + fuzz_offset) * fuzz_drive * vca_env).tanh
+		sig * vca_env, ( (sig + fuzz_offset) * (fuzz_drive+1) * vca_env).tanh
 	]);
 	sig = LeakDC.ar(sig) * master_volume * kill_env;
 	// output
@@ -178,7 +248,32 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 	env_attack = 0.0005, env_decay = 1, env_sustain = 0, env_release = 1, // env
 	lfo_rate = 1, // mod params
 	pwm_amount = 0, freq_amount = 0, ffreq_amount = 0; // mod destinations
-	var sig, mod, sub_freq, saw, pulse, sub, env, kill_env;
+	var sig, mod, sub_freq, saw, pulse, sub, env, kill_env, mainOscDriftLfo, subOscDriftLfo;
+
+	// analogify
+	mainOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.001,
+		add: 1
+	);
+	subOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.0008,
+		add: 1
+	);
+
+	// lag inputs
+	pw = Lag.kr(pw, 0.005);
+	vco_balance = Lag.kr(vco_balance, 0.005);
+	vco_pitch = Lag.kr(vco_pitch, 0.005);
+	sub_amp = Lag.kr(sub_amp, 0.005);
+	noise_amp = Lag.kr(noise_amp, 0.005);
+	filter_freq = Lag.kr(filter_freq, 0.005);
+	filter_res = Lag.kr(filter_res, 0.005);
+	filter_env_amount = Lag.kr(filter_env_amount, 0.005);
+	pwm_amount = Lag.kr(pwm_amount, 0.005);
+	freq_amount = Lag.kr(freq_amount, 0.005);
+	ffreq_amount = Lag.kr(ffreq_amount, 0.005);
 
 	// control sources
 	env = EnvGen.ar(
@@ -196,8 +291,8 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 
 	// audio processing
 	freq = Lag.kr(freq, 0.005 + portamento);
-	sub_freq = freq * 2.pow(sub_oct);
-	freq = freq * 2.pow(vco_pitch/12) * LinExp.kr(mod*freq_amount, 0, 1, 1, 2);
+	sub_freq = freq * 2.pow(sub_oct) * subOscDriftLfo;
+	freq = freq * 2.pow(vco_pitch/12) * LinExp.kr(mod*freq_amount, 0, 1, 1, 2) * mainOscDriftLfo;
 	// oscillators
 	saw = Saw.ar(
 		freq
@@ -213,7 +308,7 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 	sig = SelectX.ar(noise_amp*0.5, [sig, WhiteNoise.ar()]);
 	// filtering
 	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), 0, 1, 1, 2);
-	sig = RLPF.ar(sig, filter_freq, filter_res.linexp(0, 1, 1, 0.05));
+	sig = RLPF.ar(sig, filter_freq.clip(20, 20000), filter_res.linexp(0, 1, 1, 0.05));
 	sig = sig * env * master_volume * kill_env;
 	// output
 	Out.ar(out, sig!2);
@@ -228,7 +323,33 @@ SynthDef(\juno6, {// todos: clip frequency values from going to high, make it an
 	env_attack = 0.0005, env_decay = 1, env_sustain = 0, env_release = 1, // env
 	lfo_rate = 1, // mod params
 	pwm_amount = 0, freq_amount = 0, ffreq_amount = 0; // mod destinations
-	var sig, mod, sub_freq, saw, pulse, sub, env, kill_env;
+	var sig, mod, sub_freq, saw, pulse, sub, env, kill_env, mainOscDriftLfo, subOscDriftLfo;
+
+	// lag inputs
+	pw = Lag.kr(pw, 0.005);
+	vco_balance = Lag.kr(vco_balance, 0.005);
+	vco_pitch = Lag.kr(vco_pitch, 0.005);
+	sub_amp = Lag.kr(sub_amp, 0.005);
+	noise_amp = Lag.kr(noise_amp, 0.005);
+	hpf_freq = Lag.kr(hpf_freq, 0.005);
+	filter_freq = Lag.kr(filter_freq, 0.005);
+	filter_res = Lag.kr(filter_res, 0.005);
+	filter_env_amount = Lag.kr(filter_env_amount, 0.005);
+	pwm_amount = Lag.kr(pwm_amount, 0.005);
+	freq_amount = Lag.kr(freq_amount, 0.005);
+	ffreq_amount = Lag.kr(ffreq_amount, 0.005);
+
+	// analogify
+	mainOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.001,
+		add: 1
+	);
+	subOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.0008,
+		add: 1
+	);
 
 	// control sources
 	env = EnvGen.ar(
@@ -246,8 +367,8 @@ SynthDef(\juno6, {// todos: clip frequency values from going to high, make it an
 
 	// audio processing
 	freq = Lag.kr(freq, 0.005);
-	sub_freq = freq * 2.pow(sub_oct);
-	freq = freq * 2.pow(vco_pitch/12) * LinExp.kr(mod*freq_amount, 0, 1, 1, 2);
+	sub_freq = freq * 2.pow(sub_oct)*subOscDriftLfo;
+	freq = freq * 2.pow(vco_pitch/12) * LinExp.kr(mod*freq_amount, 0, 1, 1, 2) * mainOscDriftLfo;
 	// oscillators
 	saw = Saw.ar(
 		freq
@@ -264,7 +385,7 @@ SynthDef(\juno6, {// todos: clip frequency values from going to high, make it an
 	// filtering
 	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), 0, 1, 1, 2);
 	sig = HPF.ar(sig, hpf_freq);
-	sig = RLPF.ar(sig, filter_freq, filter_res.linexp(0, 1, 1, 0.05));
+	sig = RLPF.ar(sig, filter_freq.clip(20, 20000), filter_res.linexp(0, 1, 1, 0.05));
 	sig = sig * env * master_volume * kill_env;
 	// output
 	Out.ar(out, sig!2);
@@ -283,7 +404,33 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 	freq_amount = 0, ffreq_amount = 0; // mod destinations
 	// mixing
 	var saw, pulse, sub, lfo, sig, env, kill_env, mod,
-	mod_pulse1, mod_pulse2, mod_pulse3, mod_pulse4, mod_pulse5, mod_pulse6;
+	mod_pulse1, mod_pulse2, mod_pulse3, mod_pulse4, mod_pulse5, mod_pulse6, mainOscDriftLfo, subOscDriftLfo;
+
+	// lag inputs
+	pw = Lag.kr(pw, 0.005);
+	dco_balance = Lag.kr(dco_balance, 0.005);
+	dco_pitch = Lag.kr(dco_pitch, 0.005);
+	sub_amp = Lag.kr(sub_amp, 0.005);
+	noise_amp = Lag.kr(noise_amp, 0.005);
+	hpf_freq = Lag.kr(hpf_freq, 0.005);
+	filter_freq = Lag.kr(filter_freq, 0.005);
+	filter_res = Lag.kr(filter_res, 0.005);
+	filter_env_amount = Lag.kr(filter_env_amount, 0.005);
+	pwm_amount = Lag.kr(pwm_amount, 0.005);
+	freq_amount = Lag.kr(freq_amount, 0.005);
+	ffreq_amount = Lag.kr(ffreq_amount, 0.005);
+
+	// analogify
+	mainOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.001,
+		add: 1
+	);
+	subOscDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.0008,
+		add: 1
+	);
 
 	// control sources
 	env = EnvGen.ar(
@@ -306,9 +453,9 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 	freq = freq * 2.pow(dco_pitch/12) * LinExp.kr(mod*freq_amount, 0, 1, 1, 2);
 
 	// initial waves
-	saw = Saw.ar(freq);
-	pulse = Pulse.ar(freq, Select.kr(pulse_wave, [0.5, 0.25, lfo]));
-	sub = Pulse.ar(freq*(2.pow(sub_oct)), Select.kr(sub_wave, [0.5, 0.25, 0.5, 0.5]));
+	saw = Saw.ar(freq * mainOscDriftLfo);
+	pulse = Pulse.ar(freq * mainOscDriftLfo, Select.kr(pulse_wave, [0.5, 0.25, lfo]));
+	sub = Pulse.ar(freq*(2.pow(sub_oct) * subOscDriftLfo), Select.kr(sub_wave, [0.5, 0.25, 0.5, 0.5]));
 
 	// modulation waves
 	mod_pulse1 = LFPulse.ar(freq*2, 0, lfo);
@@ -341,7 +488,7 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 	// filtering
 	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), 0, 1, 1, 2);
 	sig = HPF.ar(sig, hpf_freq);
-	sig = RLPF.ar(sig, filter_freq, filter_res.linexp(0, 1, 1, 0.005));
+	sig = RLPF.ar(sig, filter_freq.clip(20, 20000), filter_res.linexp(0, 1, 1, 0.005));
 	sig = sig * env * master_volume * kill_env;
 	// output
 	Out.ar(out, sig!2);
@@ -354,14 +501,39 @@ SynthDef(\buchla, {// todos: clip frequency values from going to high, make it a
 	env_fold = 0, env_mod = 0,
 	f_env_min = 300, f_env_max = 10000,
 	clip = 0, folds = 0, master_volume = 1; // shaping params;
-	var sig, mod, phase, lpg_env, amp_env, kill_env;
+	var sig, mod, phase, lpg_env, amp_env, kill_env, carDriftLfo, modDriftLfo;
+
+	// lag inputs
+	mod_rat = Lag.kr(mod_rat, 0.005);
+	car_rat = Lag.kr(car_rat, 0.005);
+	fm_index = Lag.kr(fm_index, 0.005);
+	fb = Lag.kr(fb, 0.005);
+	bend = Lag.kr(bend, 0.005);
+	env_fold = Lag.kr(env_fold, 0.005);
+	env_mod = Lag.kr(env_mod, 0.005);
+	f_env_min = Lag.kr(f_env_min, 0.005);
+	f_env_max = Lag.kr(f_env_max, 0.005);
+	clip = Lag.kr(clip, 0.005);
+	folds = Lag.kr(folds, 0.005);
+
+	// analogify
+	carDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.001,
+		add: 1
+	);
+	modDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.0008,
+		add: 1
+	);
 
 	lpg_env = EnvGen.ar(Env.new([0, 1, 0], [attack, decay], [4, -20]), gate, doneAction: 0);
 	amp_env = EnvGen.ar(Env.new([0, 1, 0], [attack, decay], [4, -10]), gate, doneAction: 2);
 	kill_env = EnvGen.ar(Env.asr(0, 1, 0.005), kill_gate, doneAction: 2);
 
-	mod = SinOscFB.ar(freq*mod_rat, fb*0.5pi, fm_index + (lpg_env * env_mod));
-	phase = LFSaw.ar(freq*car_rat);
+	mod = SinOscFB.ar(freq*mod_rat*modDriftLfo, fb*0.5pi, fm_index + (lpg_env * env_mod));
+	phase = LFSaw.ar(freq*car_rat*carDriftLfo);
 	phase = phase.pow(10.pow(bend)) + mod;
 	sig = SinOsc.ar(0, phase.linlin(-1, 1, 0, 2pi), 0.5);
 
@@ -420,6 +592,11 @@ SynthDef(\modal, { // modal, make a synthdef
 	ffilter = 0, resonance = 3, master_volume = 1;
 	var sig, kill_env;
 
+	// lag inputs
+	impulse_balance = Lag.kr(impulse_balance, 0.005);
+	ffilter = Lag.kr(ffilter, 0.005);
+	resonance = Lag.kr(resonance, 0.005);
+
 	kill_env = EnvGen.ar(Env.linen(0, 5, 0.005), kill_gate, doneAction: 2); // kill after 5 secs
 
 	sig = SelectX.ar(impulse_balance, [
@@ -451,7 +628,7 @@ SynthDef(\megafm, {
 	op1_rat = 1, op2_rat = 1, op3_rat = 1, op4_rat = 1,
 	op1_det = 0, op2_det = 0, op3_det = 0, op4_det = 0;
 	var sig, kill_env, op_amps, op_envs, op_freqs, op2_pm, op3_pm, op4_pm, bitdepth = 8,
-	op_ratios, op_detunes, op1, op2, op3, op4, mod_env, car_env,
+	op_ratios, op_detunes, op1, op2, op3, op4, mod_env, car_env, carDriftLfo, modDriftLfo,
 	op1toout, op1to2, op1to3, op1to4, op2toout, op2to3, op2to4, op3toout, op3to4, op4toout;
 
 	op1toout = Select.kr(algorithm, [0, 0, 0, 0, 0, 0, 0, 1]);
@@ -464,6 +641,35 @@ SynthDef(\megafm, {
 	op2to3 = Select.kr(algorithm, [1, 1, 1, 0, 0, 0, 0, 0]);
 	op2to4 = Select.kr(algorithm, [0, 0, 0, 1, 0, 0, 0, 0]);
 	op3to4 = Select.kr(algorithm, [1, 1, 1, 1, 1, 0, 0, 0]);
+
+	// lag inputs
+	op1toout = Lag.kr(op1toout, 0.005);
+	op2toout = Lag.kr(op2toout, 0.005);
+	op3toout = Lag.kr(op3toout, 0.005);
+	op4toout = Lag.kr(op4toout, 0.005);
+	op1to2 = Lag.kr(op1to2);
+	op1to3 = Lag.kr(op1to3);
+	op1to4 = Lag.kr(op1to4);
+	op2to3 = Lag.kr(op2to3);
+	op2to4 = Lag.kr(op2to4);
+	op3to4 = Lag.kr(op3to4);
+	fb = Lag.kr(fb, 0.005);
+	op1_lvl = Lag.kr(op1_lvl, 0.005);
+	op2_lvl = Lag.kr(op2_lvl, 0.005);
+	op3_lvl = Lag.kr(op3_lvl, 0.005);
+	op4_lvl = Lag.kr(op4_lvl, 0.005);
+
+	// analogify
+	carDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.001,
+		add: 1
+	);
+	modDriftLfo = LFNoise2.kr(
+		freq: 0.1,
+		mul: 0.0008,
+		add: 1
+	);
 
 	mod_env = EnvGen.ar(
 		Env( [0, 1, mod_sl, mod_sl/2, 0], [mod_at, mod_dec, mod_sr, mod_rel], 'lin', 3, 2 )
@@ -487,10 +693,10 @@ SynthDef(\megafm, {
 	];
 
 	op_freqs = [
-		op1_rat*(1+op1_det),
-		op2_rat*(1+op2_det),
-		op3_rat*(1+op3_det),
-		op4_rat*(1+op4_det),
+		Lag.kr(op1_rat*(1+op1_det), 0.005) * Select.kr(op1toout, [modDriftLfo, carDriftLfo]),
+		Lag.kr(op2_rat*(1+op2_det), 0.005) * Select.kr(op1toout, [modDriftLfo, carDriftLfo]),
+		Lag.kr(op3_rat*(1+op3_det), 0.005) * Select.kr(op1toout, [modDriftLfo, carDriftLfo]),
+		Lag.kr(op4_rat*(1+op4_det), 0.005) * Select.kr(op1toout, [modDriftLfo, carDriftLfo]),
 	]*freq;
 
 	// operator calculations
