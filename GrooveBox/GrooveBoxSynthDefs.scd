@@ -1,14 +1,14 @@
 SynthDef.new(\mixer, {
-	arg chan1_in, chan2_in, chan3_in, chan4_in, chan5_in, chan6_in,
-	lvl1 = 0, lvl2 = 0, lvl3 = 0, lvl4 = 0, lvl5 = 0, lvl6 = 0,
-	chor1 = 0, chor2 = 0, chor3 = 0, chor4 = 0, chor5 = 0, chor6 = 0,
-	filt1 = 0, filt2 = 0, filt3 = 0, filt4 = 0, filt5 = 0, filt6 = 0,
-	ec_s1 = 0, ec_s2 = 0, ec_s3 = 0, ec_s4 = 0, ec_s5 = 0, ec_s6 = 0,
-	rv_s1 = 0, rv_s2 = 0, rv_s3 = 0, rv_s4 = 0, rv_s5 = 0, rv_s6 = 0,
-	predelay = 0.015, echo_fb = 0, echo_time = 0.5, wow_flutter = 0.5;
-	var in, in1, in2, in3, in4, in5, in6,
+	arg chan1_in, chan2_in, chan3_in, chan4_in, chan5_in, chan6_in, chan7_in, chan8_in,
+	lvl1 = 0, lvl2 = 0, lvl3 = 0, lvl4 = 0, lvl5 = 0, lvl6 = 0, lvl7 = 0, lvl8 = 0,
+	chor1 = 0, chor2 = 0, chor3 = 0, chor4 = 0, chor5 = 0, chor6 = 0, chor7 = 0, chor8 = 0,
+	filt1 = 0, filt2 = 0, filt3 = 0, filt4 = 0, filt5 = 0, filt6 = 0, filt7 = 0, filt8 = 0,
+	ec_s1 = 0, ec_s2 = 0, ec_s3 = 0, ec_s4 = 0, ec_s5 = 0, ec_s6 = 0, ec_s7 = 0, ec_s8 = 0,
+	rv_s1 = 0, rv_s2 = 0, rv_s3 = 0, rv_s4 = 0, rv_s5 = 0, rv_s6 = 0, rv_s7 = 0, rv_s8 = 0,
+	predelay = 0, spring_amount = 0.065, darken = -6, echo_fb = 0, echo_time = 0.5, wow_flutter = 0.5;
+	var in, in1, in2, in3, in4, in5, in6, in7, in8,
 	sig, echo_dry, echo_wet, echo1, echo2, echo3, wow_flutter_lfo,
-	reverb_dry, preProcess, springReso, reverb_wet;
+	reverb_dry, preProcess, springReso, reverb_wet, predelay_init = 0.075;
 
 	// lag all inputs
 	lvl1 = Lag.kr(lvl1, 0.005);
@@ -17,6 +17,8 @@ SynthDef.new(\mixer, {
 	lvl4 = Lag.kr(lvl4, 0.005);
 	lvl5 = Lag.kr(lvl5, 0.005);
 	lvl6 = Lag.kr(lvl6, 0.005);
+	lvl7 = Lag.kr(lvl7, 0.005);
+	lvl8 = Lag.kr(lvl8, 0.005);
 
 	chor1 = Lag.kr(chor1, 0.005);
 	chor2 = Lag.kr(chor2, 0.005);
@@ -24,6 +26,8 @@ SynthDef.new(\mixer, {
 	chor4 = Lag.kr(chor4, 0.005);
 	chor5 = Lag.kr(chor5, 0.005);
 	chor6 = Lag.kr(chor6, 0.005);
+	chor7 = Lag.kr(chor7, 0.005);
+	chor8 = Lag.kr(chor8, 0.005);
 
 	filt1 = Lag.kr(filt1, 0.005);
 	filt2 = Lag.kr(filt2, 0.005);
@@ -31,6 +35,8 @@ SynthDef.new(\mixer, {
 	filt4 = Lag.kr(filt4, 0.005);
 	filt5 = Lag.kr(filt5, 0.005);
 	filt6 = Lag.kr(filt6, 0.005);
+	filt7 = Lag.kr(filt7, 0.005);
+	filt8 = Lag.kr(filt8, 0.005);
 
 	ec_s1 = Lag.kr(ec_s1, 0.005);
 	ec_s2 = Lag.kr(ec_s2, 0.005);
@@ -38,6 +44,8 @@ SynthDef.new(\mixer, {
 	ec_s4 = Lag.kr(ec_s4, 0.005);
 	ec_s5 = Lag.kr(ec_s5, 0.005);
 	ec_s6 = Lag.kr(ec_s6, 0.005);
+	ec_s7 = Lag.kr(ec_s7, 0.005);
+	ec_s8 = Lag.kr(ec_s8, 0.005);
 
 	rv_s1 = Lag.kr(rv_s1, 0.005);
 	rv_s2 = Lag.kr(rv_s2, 0.005);
@@ -45,8 +53,12 @@ SynthDef.new(\mixer, {
 	rv_s4 = Lag.kr(rv_s4, 0.005);
 	rv_s5 = Lag.kr(rv_s5, 0.005);
 	rv_s6 = Lag.kr(rv_s6, 0.005);
+	rv_s7 = Lag.kr(rv_s7, 0.005);
+	rv_s8 = Lag.kr(rv_s8, 0.005);
 
 	predelay = Lag.kr(predelay, 0.005);
+	spring_amount = Lag.kr(spring_amount, 0.005);
+	darken = Lag.kr(darken, 0.005);
 	echo_fb = Lag.kr(echo_fb, 0.005);
 	echo_time = Lag.kr(echo_time, 0.005);
 	wow_flutter = Lag.kr(wow_flutter, 0.005);
@@ -59,17 +71,19 @@ SynthDef.new(\mixer, {
 	in4 = In.ar(chan4_in, 2) * lvl4;
 	in5 = In.ar(chan5_in, 2) * lvl5;
 	in6 = In.ar(chan6_in, 2) * lvl6;
-	in = [in1, in2, in3, in4, in5, in6];
+	in7 = In.ar(chan7_in, 2) * lvl7;
+	in8 = In.ar(chan8_in, 2) * lvl8;
+	in = [in1, in2, in3, in4, in5, in6, in7, in8];
 
 	// chorusing
 
-	6.do({
+	8.do({
 		|index|
 		var signal, chorus, chorusPreProcess, chorusPreDelay = 0.01, chorusDepth = 0.0053,
 		chorusMix, chorusDelay, chorusLfo;
 
 		signal = in[index];
-		chorusMix = [chor1, chor2, chor3, chor4, chor5, chor6].at(index);
+		chorusMix = [chor1, chor2, chor3, chor4, chor5, chor6, chor7, chor8].at(index);
 
 		chorusLfo = LFPar.kr(chorusMix.linlin(0.7, 1, 0.5, 0.75));
 
@@ -89,10 +103,10 @@ SynthDef.new(\mixer, {
 
 	// filtering
 
-	6.do({
+	8.do({
 		|index|
 		var ffilter;
-		ffilter = [filt1, filt2, filt3, filt4, filt5, filt6].at(index);
+		ffilter = [filt1, filt2, filt3, filt4, filt5, filt6, filt7, filt8].at(index);
 		in[index] = HPF.ar(
 			LPF.ar(
 				in[index], ffilter.linexp(-1, 0, 200, 20000)),
@@ -106,7 +120,7 @@ SynthDef.new(\mixer, {
 
 	// echo send
 
-	echo_dry = tanh(Splay.ar(in * [ec_s1, ec_s2, ec_s3, ec_s4, ec_s5, ec_s6]) + LocalIn.ar(2));
+	echo_dry = tanh(Splay.ar(in * [ec_s1, ec_s2, ec_s3, ec_s4, ec_s5, ec_s6, ec_s7, ec_s8]) + LocalIn.ar(2));
 
 	wow_flutter_lfo = wow_flutter * (SinOsc.kr(7).range(-0.01, 0) + SinOsc.kr(0.55).range(-0.01, 0));
 
@@ -119,15 +133,15 @@ SynthDef.new(\mixer, {
 
 	// reverb send
 
-	reverb_dry = Splay.ar(in * [rv_s1, rv_s2, rv_s3, rv_s4, rv_s5, rv_s6]);
+	reverb_dry = Splay.ar(in * [rv_s1, rv_s2, rv_s3, rv_s4, rv_s5, rv_s6, rv_s7, rv_s8]);
 
-	preProcess = tanh(BHiShelf.ar(in: reverb_dry, freq: 1000, rs: 1, db: -6, mul: 1.5, add: 0)); // Darken and saturate
-	preProcess = DelayN.ar(in: preProcess, maxdelaytime: predelay, delaytime: predelay);
+	preProcess = tanh(BHiShelf.ar(in: reverb_dry, freq: 1000, rs: 1, db: darken, mul: 1.5, add: 0)); // Darken and saturate
+	preProcess = DelayN.ar(in: preProcess, maxdelaytime: predelay_init, delaytime: predelay.linlin(0, 1, 0.015, 0.075));
 	springReso = Klank.ar(specificationsArrayRef: `[[508, 270, 1153], [0.15, 0.25, 0.1], [1, 1.2, 1.4]], input: preProcess);
 	springReso = Limiter.ar(springReso);
 	preProcess = preProcess * 0.55; // FreeVerb doesn't like a loud signal
 	reverb_wet = tanh(FreeVerb2.ar(in: preProcess, in2: preProcess, mix: 1, room: 0.7, damp: 0.35, mul: 1.8));
-	reverb_wet = (reverb_wet * 0.935) + (springReso * 0.065);
+	reverb_wet = SelectX.ar(spring_amount, [reverb_wet, springReso]);//(reverb_wet * 0.935) + (springReso * 0.065);
 
 	sig = tanh(sig + echo_wet + reverb_wet);
 
@@ -1044,8 +1058,8 @@ SynthDef(\megafm, {
 					\times, ti,
 					\impulse_balance, ~modal_dicts[track_index][\impulse_balance],
 					\ffilter, ~modal_dicts[track_index][\ffilter].linlin(0, 1, -1, 1),
-					\attack, ~modal_dicts[track_index][\attack].linexp(0, 1, 0.0005, 3),
-					\release, ~modal_dicts[track_index][\release].linexp(0, 1, 0.0005, 3),
+					\attack, ~modal_dicts[track_index][\attack].linexp(0, 1, 0.005, 3),
+					\release, ~modal_dicts[track_index][\release].linexp(0, 1, 0.005, 3),
 					\resonance, ~modal_dicts[track_index][\resonance].linexp(0, 1, 0.5, 10),
 				], ~synth_group);
 				/*
@@ -1059,4 +1073,103 @@ SynthDef(\megafm, {
 			},
 		);
 	});
-}
+};
+
+SynthDef(\bufplay, {
+	arg bufnum, rate = 1, amp = 1, dur = 1, startPos = 0, pan = 0, out;
+	var sig, env;
+	env = EnvGen.ar( Env([0, 1, 1, 0], [0.0005, dur-0.001, 0.0005]), doneAction: 2);
+	sig = PlayBuf.ar(2, bufnum, BufRateScale.ir(bufnum) * rate, startPos: startPos-24, loop: 1, doneAction:0);
+	sig = sig * amp * env;
+	sig = Pan2.ar(sig, pan);
+	Out.ar(out, sig);
+}).add;
+
+~sound_file_buffers = Buffer.allocConsecutive(8, s, 262114, 2);//8.collect({ |index| Buffer.alloc(s, 262144, 2) });
+
+~find_bpm = {
+	arg dur;
+	var bpm_min = 90, bpm_max = 180, bpm, tries = 100;
+	bpm = 60;
+	bpm = bpm/dur;
+	while(
+		{(bpm > bpm_max).or(bpm < bpm_min).or(tries < 0)},
+		{
+			if(bpm > bpm_max, {
+				bpm = bpm/2;
+			}, {
+				bpm = bpm*2;
+			});
+			tries = tries-1;
+		}
+	);
+	bpm; // dur 16th = 15/bpm
+};
+
+~play_samples = {
+	var sf;
+	sf = nil!8;
+	8.do({
+		|index|
+		var amp, pan, dur_mult;
+		{
+			if(~trigger_buttons[index][~trigger_indices[index]].value.asBoolean, {
+				var val1, val2, knob_val1, knob_val2, start = 0, bus_nr = 6;
+				sf[index] = ~sound_file_dict[
+					~sample_folder_menu[index].item.asSymbol
+				][
+					~sample_menu[index].item.asSymbol
+				];
+
+				knob_val1 = ~vel_rand_param_knobs[index][0].value;
+				knob_val2 = ~vel_rand_param_knobs[index][2].value;
+				val1 = ~vel_bar_vals[index][~global_sample_index];
+				val2 = ~vel_pattern_vals[index][~trigger_indices[index]];
+				val1 = [knob_val1.linlin(0, 0.5, 0, val1), knob_val1.linlin(0.5, 1, val1, 1)].at((knob_val1*1.999).asInteger);
+				val2 = [knob_val2.linlin(0, 0.5, 0, val2), knob_val2.linlin(0.5, 1, val2, 1)].at((knob_val2*1.999).asInteger);
+				amp = ~vel_rand_param_knobs[index][1].value.linlin(0, 1, val1, val2);
+
+				knob_val1 = ~pan_rand_param_knobs[index][0].value;
+				knob_val2 = ~pan_rand_param_knobs[index][2].value;
+				val1 = ~pan_bar_vals[index][~global_sample_index];
+				val2 = ~pan_pattern_vals[index][~trigger_indices[index]];
+				if(val1 < 0.5, {
+					val1 = [knob_val1.linlin(0, 0.5, 0.5, val1), knob_val1.linlin(0.5, 1, val1, 0)].at((knob_val1*1.999).asInteger);
+				}, {
+					val1 = [knob_val1.linlin(0, 0.5, 0.5, val1), knob_val1.linlin(0.5, 1, val1, 1)].at((knob_val1*1.999).asInteger);
+				});
+				if(val2 < 0.5, {
+					val2 = [knob_val2.linlin(0, 0.5, 0.5, val2), knob_val2.linlin(0.5, 1, val2, 0)].at((knob_val2*1.999).asInteger);
+				}, {
+					val2 = [knob_val2.linlin(0, 0.5, 0.5, val2), knob_val2.linlin(0.5, 1, val2, 1)].at((knob_val2*1.999).asInteger);
+				});
+				pan = ~pan_rand_param_knobs[index][1].value.linlin(0, 1, val1, val2).linlin(0, 1, -1, 1);
+
+				knob_val1 = ~dec_rand_param_knobs[index][0].value;
+				knob_val2 = ~dec_rand_param_knobs[index][2].value;
+				val1 = ~dec_bar_vals[index][~global_sample_index];
+				val2 = ~dec_pattern_vals[index][~trigger_indices[index]];
+				val1 = [knob_val1.linlin(0, 0.5, 0, val1), knob_val1.linlin(0.5, 1, val1, 1)].at((knob_val1*1.999).asInteger);
+				val2 = [knob_val2.linlin(0, 0.5, 0, val2), knob_val2.linlin(0.5, 1, val2, 1)].at((knob_val2*1.999).asInteger);
+				dur_mult = ~dec_rand_param_knobs[index][1].value.linlin(0, 1, val1, val2);
+
+				~sound_file_buffers[index].read(sf[index].path);
+
+				if(index > 3, {
+					start = 15 / ~find_bpm.value(sf[index].duration) * ~trigger_indices[index];
+					bus_nr = 7;
+				});
+
+				Synth.new(\bufplay, [
+					\bufnum, ~sound_file_buffers[index].bufnum,
+					\dur, 15/~bpm*dur_mult,
+					\startPos, start*44100,
+					\rate, 1,
+					\amp, amp.linlin(0, 1, -60, 0).dbamp * ~sample_levels[index],
+					\pan, pan,
+					\out, ~mixer_busses[bus_nr],
+				], ~synth_group);
+			});
+		}.defer;
+	});
+};

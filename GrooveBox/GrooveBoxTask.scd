@@ -31,6 +31,15 @@ r = Task({
 
 		~groovebox.tick;
 
+		// play samples
+		~play_samples.value();
+
+		~trigger_indices.do({
+			|val, index|
+			~trigger_indices[index] = (~trigger_indices[index]+1).mod(~trigger_lengths[index]);
+		});
+		~global_sample_index = (~global_sample_index+1).mod(16);
+
 		delta = 15/~bpm*( [~swing, 1-~swing].at(count) *2);
 		count = 1-count;
 		delta.yield;

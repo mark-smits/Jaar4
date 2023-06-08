@@ -97,6 +97,21 @@ GrooveBox {
 		});
 	}
 
+	regen_chords {
+		chords.calculate(4);
+		scales = chords.get_scales;
+		//global_scale = [0, 2, 3, 5, 7, 8, 10];
+		global_root = (global_root + [5, 7, 2, 10].wchoose([0.4, 0.4, 0.1, 0.1])).mod(12);
+		if(global_root > 6, {
+			global_root = global_root - 12;
+		});
+		roots = [];
+		scales.do({
+			|scale, index|
+			roots = roots ++ scale[0];
+		});
+	}
+
 	tick {
 		global_index = (global_index + 1).mod(128); // 8 bar
 		pattern_indices.do({
@@ -393,5 +408,9 @@ GrooveBox {
 			seq.test;
 		});
 		engine_lists_dict.dopostln;
+	}
+
+	test_chords {
+		chords.test;
 	}
 }

@@ -1,6 +1,6 @@
 ~server_options = Server.default.options; ~server_options.blockSize = 256; s.boot;
 
-~bpm = 130; ~swing = 0.6; ~lfo_bus = Bus.audio(s, 1); ~mixer_busses = 6.collect({ Bus.audio(s, 2); });
+~bpm = 130; ~swing = 0.6; ~lfo_bus = Bus.audio(s, 1); ~mixer_busses = 8.collect({ Bus.audio(s, 2); });
 
 ~lfo_group = Group.new; ~synth_group = Group.new(s, \addToTail); ~mixer_group = Group.new(s, \addToTail);
 
@@ -16,6 +16,8 @@
 	\chan4_in, ~mixer_busses[3],
 	\chan5_in, ~mixer_busses[4],
 	\chan6_in, ~mixer_busses[5],
+	\chan7_in, ~mixer_busses[6],
+	\chan8_in, ~mixer_busses[7],
 ], ~mixer_group);
 )
 
@@ -23,7 +25,7 @@ r.play;
 r.stop;
 
 ~mixer.set(\lvl1, 0.2);
-~mixer.set(\chor1, 0);
+~mixer.set(\chor1, 1);
 ~mixer.set(\filt1, 0.15);
 ~mixer.set(\wow_flutter, 1);
 ~mixer.set(\ec_s1, 0.5);

@@ -16,17 +16,17 @@
 ~mixer_sliders = 8.collect({
 	|index|
 	var hor_inc;
-	hor_inc = 350/8;
-	Slider.new(~comp_view_global[3], Rect(10 + (hor_inc*(index+0.375)), 105, hor_inc/4, 80));
+	hor_inc = 220/8;
+	Slider.new(~comp_view_global[3], Rect(10 + (hor_inc*(index+0.33)), 105, hor_inc/3, 80));
 });
 
 ~mixer_knobs = 8.collect({
 	|index|
 	var hor_inc;
-	hor_inc = 350/8;
+	hor_inc = 220/8;
 	3.collect({
 		|index2|
-		Knob.new(~comp_view_global[3], Rect(10 + (hor_inc*(index+0.25)), 10 + (30*index2), hor_inc/2, hor_inc/2)).mode_(\vert);
+		Knob.new(~comp_view_global[3], Rect(10 + (hor_inc*(index+0.1667)), 10 + (30*index2), hor_inc/1.5, hor_inc/1.5)).mode_(\vert);
 	});
 });
 
@@ -35,13 +35,19 @@
 	list[2].value = 0.5;
 });
 
-6.do({
+8.do({
 	|index|
 	~mixer_sliders[index].action_({
 		~mixer.set(
-			[\lvl1, \lvl2, \lvl3, \lvl4, \lvl5, \lvl6].at(index),
-			~mixer_sliders[index].value
+			[\lvl1, \lvl2, \lvl3, \lvl4, \lvl5, \lvl6, \lvl7, \lvl8].at(index),
+			~mixer_sliders[index].value.linlin(0, 1, -60, 0).dbamp;
 		);
+		if(~mixer_sliders[index].value == 0, {
+			~mixer.set(
+			[\lvl1, \lvl2, \lvl3, \lvl4, \lvl5, \lvl6, \lvl7, \lvl8].at(index),
+			0;
+		);
+		});
 	});
 	~mixer_knobs[index].do({
 		|knob, index2|
@@ -49,15 +55,68 @@
 			|kn|
 			var symb;
 			symb = [
-				[\rv_s1, \rv_s2, \rv_s3, \rv_s4, \rv_s5, \rv_s6].at(index),
-				[\ec_s1, \ec_s2, \ec_s3, \ec_s4, \ec_s5, \ec_s6].at(index),
-				[\filt1, \filt2, \filt3, \filt4, \filt5, \filt6].at(index)
+				[\rv_s1, \rv_s2, \rv_s3, \rv_s4, \rv_s5, \rv_s6, \rv_s7, \rv_s8].at(index),
+				[\ec_s1, \ec_s2, \ec_s3, \ec_s4, \ec_s5, \ec_s6, \ec_s7, \ec_s8].at(index),
+				[\filt1, \filt2, \filt3, \filt4, \filt5, \filt6, \filt7, \filt8].at(index)
 			].at(index2);
 			~mixer.set(
-				symb, [kn.value, kn.value, kn.value.linlin(0, 1, -1, 1)].at(index2)
+				symb, [kn.value.linlin(0, 1, -60, 0).dbamp,
+					kn.value.linlin(0, 1, -60, 0).dbamp,
+					kn.value.linlin(0, 1, -1, 1)].at(index2)
 			);
 		});
 	});
+});
+
+// effect params & global settings
+~tempo_knob = Knob.new(~comp_view_global[3], Rect(240, 135, 30, 30)).mode_(\vert).action_({
+	|knob|
+	~bpm = knob.value.linlin(0, 1, 60, 180);
+}).valueAction_(7.0/12);
+~swing_knob = Knob.new(~comp_view_global[3], Rect(280, 135, 30, 30)).mode_(\vert).action_({
+	|knob|
+	~swing = knob.value.linlin(0, 1, 0.5, 0.9);
+}).valueAction_(0.4);
+~regen_button = Button.new(~comp_view_global[3], Rect(320, 135, 30, 30)).action_({
+	~groovebox.regen_chords;
+});
+~tempo_swing_regen_labels = 3.collect({
+	|index|
+	StaticText.new(~comp_view_global[3], Rect(235 + (40*index), 170, 40, 10)).string_(
+		["tempo", "swing", "regen"].at(index)
+	).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+});
+~echo_knobs = 3.collect({
+	|index|
+	StaticText.new(~comp_view_global[3], Rect(235 + (40*index), 110, 40, 10)).string_(
+		["time", "feedb.", "wow fl."].at(index)
+	).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~comp_view_global[3], Rect(240 + (40*index), 75, 30, 30)).mode_(\vert).action_({
+		|knob|
+		~mixer.set( [\echo_time, \echo_fb, \wow_flutter].at(index), knob.value);
+	}).valueAction_([
+		0.5,
+		0,
+		0.1
+	].at(index));
+});
+~reverb_knobs = 3.collect({
+	|index|
+	StaticText.new(~comp_view_global[3], Rect(235 + (40*index), 50, 40, 10)).string_(
+		["pr. del.", "spring", "darken"].at(index)
+	).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~comp_view_global[3], Rect(240 + (40*index), 15, 30, 30)).mode_(\vert).action_({
+		|knob|
+		~mixer.set( [\predelay, \spring_amount, \darken].at(index), [
+			knob.value,
+			knob.value.linlin(0, 1, 0, 0.1),
+			knob.value.linlin(0, 1, 0, -12)
+		].at(index));
+	}).valueAction_([
+		0,
+		0.65,
+		0.5
+	].at(index));
 });
 
 // comp views for sequencers
@@ -551,6 +610,71 @@
 		\ffreq_amount, 0,
 	]);
 });
+~randomize_anushri = {
+	arg index;
+	//~anushri_page1_knobs[index]["row"]["column"]
+	~anushri_page1_knobs[index][0][0].valueAction_(1.0.rand);
+	~anushri_page1_knobs[index][0][2].valueAction_([0, 1].wchoose([0.95, 0.05]));
+	~anushri_page1_knobs[index][0][3].valueAction_(1.0.rand);
+	~anushri_page1_knobs[index][1][0].valueAction_(0.9.rand + 0.05);
+	~anushri_page1_knobs[index][1][2].valueAction_([0, 1].choose);
+	~anushri_page1_knobs[index][1][3].valueAction_(0.67.rand + 0.33);
+	~anushri_page1_knobs[index][2][0].valueAction_([0, 0, 0, 5/12, 7/12].choose);
+	~anushri_page1_knobs[index][2][1].valueAction_(1.0.rand);
+	~anushri_page1_knobs[index][2][2].valueAction_([0, 0.5, 1].wchoose([0.2, 0.4, 0.4]));
+	~anushri_page1_knobs[index][2][3].valueAction_([1.0.rand, 0].wchoose([0.8, 0.2]));
+	~anushri_page1_knobs[index][3][1].valueAction_(0.9.rand + 0.1);
+	~anushri_page1_knobs[index][3][2].valueAction_(1.0.rand);
+	~anushri_page1_knobs[index][3][3].valueAction_(0.9.rand + 0.1);
+
+	~anushri_page2_knobs[index][0][0].valueAction_(1.0.rand);
+	~anushri_page2_knobs[index][0][1].valueAction_(0.9.rand);
+	~anushri_page2_knobs[index][0][2].valueAction_(1.0.rand);
+	~anushri_page2_knobs[index][1][0].valueAction_([0, 1].choose);
+	~anushri_page2_knobs[index][1][1].valueAction_(1.0.rand);
+	~anushri_page2_knobs[index][3][1].valueAction_(0.9.rand + 0.1);
+	~anushri_page2_knobs[index][3][2].valueAction_(1.0.rand);
+	~anushri_page2_knobs[index][3][3].valueAction_(0.9.rand + 0.1);
+
+	~anushri_page3_knobs[index][0][1].valueAction_(1.0.rand);
+	~anushri_page3_knobs[index][1][0].valueAction_(1.0.rand);
+	~anushri_page3_knobs[index][1][1].valueAction_(1.0.rand);
+	~anushri_page3_knobs[index][1][3].valueAction_(1.0.rand);
+	~anushri_page3_knobs[index][3][0].valueAction_(0);
+	~anushri_page3_knobs[index][3][1].valueAction_(0);
+	~anushri_page3_knobs[index][3][2].valueAction_(0);
+	~anushri_page3_knobs[index][3][3].valueAction_(0);
+	2.do({
+		switch(4.rand,
+			0, {
+				if(1.0.rand > 0.9, {
+					~anushri_page3_knobs[index][3][0].valueAction_(1.0.rand);
+				});
+			},
+			1, {
+				~anushri_page3_knobs[index][3][1].valueAction_(1.0.rand);
+			},
+			2, {
+				~anushri_page3_knobs[index][3][2].valueAction_(1.0.rand);
+			},
+			3, {
+				~anushri_page3_knobs[index][3][3].valueAction_(1.0.rand);
+			}
+		);
+	});
+
+	if([true, false].choose, {
+		var val;
+		val = 0.35.rand + 0.05;
+		~anushri_page1_knobs[index][3][0].valueAction_(val);
+		~anushri_page2_knobs[index][3][0].valueAction_(val);
+		~anushri_page3_knobs[index][0][0].valueAction_(val);
+	}, {
+		~anushri_page1_knobs[index][3][0].valueAction_(0);
+		~anushri_page2_knobs[index][3][0].valueAction_(0);
+		~anushri_page3_knobs[index][0][0].valueAction_(0);
+	});
+};
 ~anushri_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~anushri_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -596,11 +720,12 @@
 	StaticText(~anushri_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~anushri_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_anushri.value(index);
 	});
 });
 ~anushri_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "portamento", "", "fm on", "fm index" ],
 		[ "pulse width", "", "sync on", "sync amount" ],
@@ -613,7 +738,7 @@
 			StaticText(~anushri_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~anushri_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~anushri_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -634,9 +759,11 @@
 			});
 		});
 	});
+	knobs;
 });
 ~anushri_page2_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "filter freq", "filter res", "filter env", "" ],
 		[ "fuzz on", "fuzz drive", "", "" ],
@@ -649,7 +776,7 @@
 			StaticText(~anushri_comp_views[index][2], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~anushri_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~anushri_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -670,9 +797,11 @@
 			});
 		});
 	});
+	knobs;
 });
 ~anushri_page3_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "mod attack", "mod decay", "", "" ],
 		[ "lfo rate", "lfo shape", "", "mod balance" ],
@@ -685,7 +814,7 @@
 			StaticText(~anushri_comp_views[index][3], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~anushri_comp_views[index][3], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~anushri_comp_views[index][3], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -706,6 +835,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~sh101_comp_views = 6.collect({
@@ -753,6 +883,44 @@
 		\ffreq_amount, 0,
 	]);
 });
+~randomize_sh101 = {
+	arg index;
+	//~anushri_page1_knobs[index]["row"]["column"]
+	~sh101_page1_knobs[index][0][0].valueAction_(1.0.rand);
+	~sh101_page1_knobs[index][1][0].valueAction_(0.9.rand + 0.05);
+	~sh101_page1_knobs[index][1][3].valueAction_(1.0.rand);
+	~sh101_page1_knobs[index][2][0].valueAction_([0, 0, 0, 5/12, 7/12].choose);
+	~sh101_page1_knobs[index][2][1].valueAction_(1.0.rand);
+	~sh101_page1_knobs[index][2][2].valueAction_([0, 0.5, 1].wchoose([0.2, 0.4, 0.4]));
+	~sh101_page1_knobs[index][2][3].valueAction_([1.0.rand, 0].wchoose([0.8, 0.2]));
+	~sh101_page1_knobs[index][3][0].valueAction_(1.0.rand);
+	~sh101_page1_knobs[index][3][1].valueAction_(0.9.rand);
+	~sh101_page1_knobs[index][3][2].valueAction_(1.0.rand);
+
+	~sh101_page2_knobs[index][0][0].valueAction_([0, 0.35.rand + 0.05].choose);
+	~sh101_page2_knobs[index][0][1].valueAction_(0.9.rand + 0.1);
+	~sh101_page2_knobs[index][0][2].valueAction_(1.0.rand);
+	~sh101_page2_knobs[index][0][3].valueAction_(0.9.rand + 0.1);
+	~sh101_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~sh101_page2_knobs[index][3][0].valueAction_(0);
+	~sh101_page2_knobs[index][3][1].valueAction_(0);
+	~sh101_page2_knobs[index][3][2].valueAction_(0);
+	2.do({
+		switch(3.rand,
+			0, {
+				if(1.0.rand > 0.9, {
+					~sh101_page2_knobs[index][3][0].valueAction_(1.0.rand);
+				});
+			},
+			1, {
+				~sh101_page2_knobs[index][3][1].valueAction_(1.0.rand);
+			},
+			2, {
+				~sh101_page2_knobs[index][3][2].valueAction_(1.0.rand);
+			}
+		);
+	});
+};
 ~sh101_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~sh101_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -798,11 +966,12 @@
 	StaticText(~sh101_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~sh101_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_sh101.value(index);
 	});
 });
 ~sh101_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "portamento", "", "", "" ],
 		[ "pulse width", "", "", "noise amp" ],
@@ -815,7 +984,7 @@
 			StaticText(~sh101_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~sh101_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~sh101_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -836,9 +1005,11 @@
 			});
 		});
 	});
+	knobs;
 });
 ~sh101_page2_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "env attack", "env decay", "env sustain", "env release" ],
 		[ "", "", "", "" ],
@@ -851,7 +1022,7 @@
 			StaticText(~sh101_comp_views[index][2], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~sh101_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~sh101_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -872,6 +1043,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~buchla_comp_views = 6.collect({
@@ -915,6 +1087,24 @@
 		\clip, 0,
 	]);
 });
+~randomize_buchla = {
+	arg index;
+	//~anushri_page1_knobs[index]["row"]["column"]
+	~buchla_page1_knobs[index][0][0].valueAction_(1.0.rand);
+	~buchla_page1_knobs[index][0][1].valueAction_(1.0.rand);
+	~buchla_page1_knobs[index][0][2].valueAction_(1.0.rand);
+	~buchla_page1_knobs[index][0][3].valueAction_(1.0.rand);
+	~buchla_page1_knobs[index][1][0].valueAction_(0.3.rand);
+	~buchla_page1_knobs[index][1][1].valueAction_(0.25.rand);
+	~buchla_page1_knobs[index][1][3].valueAction_(1.0.rand);
+	~buchla_page1_knobs[index][2][0].valueAction_([0, 0.35.rand + 0.05].choose);
+	~buchla_page1_knobs[index][2][1].valueAction_(0.6.rand + 0.4);
+	~buchla_page1_knobs[index][2][2].valueAction_(0.5.rand);
+	~buchla_page1_knobs[index][2][3].valueAction_(0.5.rand + 0.5);
+	~buchla_page1_knobs[index][3][0].valueAction_(0.4.rand);
+	~buchla_page1_knobs[index][3][1].valueAction_(0.3.rand);
+	~buchla_page1_knobs[index][3][3].valueAction_(1.0.rand);
+};
 ~buchla_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~buchla_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -960,11 +1150,12 @@
 	StaticText(~buchla_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~buchla_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_buchla.value(index);
 	});
 });
 ~buchla_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "portamento", "mod ratio", "car ratio", "feedback" ],
 		[ "fm index", "env mod", "", "bend" ],
@@ -977,7 +1168,7 @@
 			StaticText(~buchla_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~buchla_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~buchla_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -998,6 +1189,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~juno6_comp_views = 6.collect({
@@ -1046,6 +1238,44 @@
 		\chorus, 0,
 	]);
 });
+~randomize_juno6 = {
+	arg index;
+	//~anushri_page1_knobs[index]["row"]["column"]
+	~juno6_page1_knobs[index][0][3].valueAction_(1.0.rand);
+	~juno6_page1_knobs[index][1][0].valueAction_(0.9.rand + 0.05);
+	~juno6_page1_knobs[index][1][3].valueAction_(1.0.rand);
+	~juno6_page1_knobs[index][2][0].valueAction_([0, 0, 0, 5/12, 7/12].choose);
+	~juno6_page1_knobs[index][2][1].valueAction_(1.0.rand);
+	~juno6_page1_knobs[index][2][2].valueAction_([0, 0.5, 1].wchoose([0.2, 0.4, 0.4]));
+	~juno6_page1_knobs[index][2][3].valueAction_([1.0.rand, 0].wchoose([0.8, 0.2]));
+	~juno6_page1_knobs[index][3][0].valueAction_(1.0.rand);
+	~juno6_page1_knobs[index][3][1].valueAction_(0.9.rand);
+	~juno6_page1_knobs[index][3][2].valueAction_(1.0.rand);
+
+	~juno6_page2_knobs[index][0][0].valueAction_([0, 0.35.rand + 0.05].choose);
+	~juno6_page2_knobs[index][0][1].valueAction_(0.9.rand + 0.1);
+	~juno6_page2_knobs[index][0][2].valueAction_(1.0.rand);
+	~juno6_page2_knobs[index][0][3].valueAction_(0.9.rand + 0.1);
+	~juno6_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~juno6_page2_knobs[index][3][0].valueAction_(0);
+	~juno6_page2_knobs[index][3][1].valueAction_(0);
+	~juno6_page2_knobs[index][3][2].valueAction_(0);
+	2.do({
+		switch(3.rand,
+			0, {
+				if(1.0.rand > 0.9, {
+					~juno6_page2_knobs[index][3][0].valueAction_(1.0.rand);
+				});
+			},
+			1, {
+				~juno6_page2_knobs[index][3][1].valueAction_(1.0.rand);
+			},
+			2, {
+				~juno6_page2_knobs[index][3][2].valueAction_(1.0.rand);
+			}
+		);
+	});
+};
 ~juno6_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~juno6_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -1091,11 +1321,12 @@
 	StaticText(~juno6_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~juno6_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_juno6.value(index);
 	});
 });
 ~juno6_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "", "", "", "chorus" ],
 		[ "pulse width", "", "", "noise amp" ],
@@ -1108,7 +1339,7 @@
 			StaticText(~juno6_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~juno6_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~juno6_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1129,9 +1360,11 @@
 			});
 		});
 	});
+	knobs;
 });
 ~juno6_page2_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "env attack", "env decay", "env sustain", "env release" ],
 		[ "", "", "", "" ],
@@ -1144,7 +1377,7 @@
 			StaticText(~juno6_comp_views[index][2], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~juno6_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~juno6_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1165,6 +1398,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~alpha_juno_comp_views = 6.collect({
@@ -1217,6 +1451,49 @@
 		\chorus, 0,
 	]);
 });
+~randomize_alpha_juno = {
+	arg index;
+	//~anushri_page1_knobs[index]["row"]["column"]
+	~alpha_juno_page1_knobs[index][0][0].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][0][1].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][0][2].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][0][3].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][1][0].valueAction_(0.9.rand + 0.05);
+	~alpha_juno_page1_knobs[index][1][3].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][2][0].valueAction_([0, 0, 0, 5/12, 7/12].choose);
+	~alpha_juno_page1_knobs[index][2][1].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][2][2].valueAction_([0, 0.5, 1].wchoose([0.2, 0.4, 0.4]));
+	~alpha_juno_page1_knobs[index][2][3].valueAction_([1.0.rand, 0].wchoose([0.8, 0.2]));
+	~alpha_juno_page1_knobs[index][3][0].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][3][1].valueAction_(0.5.rand);
+	~alpha_juno_page1_knobs[index][3][2].valueAction_(1.0.rand);
+	~alpha_juno_page1_knobs[index][3][3].valueAction_(0.65.rand);
+
+	~alpha_juno_page2_knobs[index][0][0].valueAction_([0, 0.35.rand + 0.05].choose);
+	~alpha_juno_page2_knobs[index][0][1].valueAction_(0.9.rand + 0.1);
+	~alpha_juno_page2_knobs[index][0][2].valueAction_(1.0.rand);
+	~alpha_juno_page2_knobs[index][0][3].valueAction_(0.9.rand + 0.1);
+	~alpha_juno_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~alpha_juno_page2_knobs[index][2][2].valueAction_(1.0.rand);
+	~alpha_juno_page2_knobs[index][3][0].valueAction_(0);
+	~alpha_juno_page2_knobs[index][3][1].valueAction_(0);
+	~alpha_juno_page2_knobs[index][3][2].valueAction_(0);
+	2.do({
+		switch(3.rand,
+			0, {
+				if(1.0.rand > 0.9, {
+					~alpha_juno_page2_knobs[index][3][0].valueAction_(1.0.rand);
+				});
+			},
+			1, {
+				~alpha_juno_page2_knobs[index][3][1].valueAction_(1.0.rand);
+			},
+			2, {
+				~alpha_juno_page2_knobs[index][3][2].valueAction_(1.0.rand);
+			}
+		);
+	});
+};
 ~alpha_juno_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~alpha_juno_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -1262,11 +1539,12 @@
 	StaticText(~alpha_juno_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~alpha_juno_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_alpha_juno.value(index);
 	});
 });
 ~alpha_juno_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "saw wave", "pulse wave", "sub wave", "chorus" ],
 		[ "pulse width", "", "", "noise amp" ],
@@ -1279,7 +1557,7 @@
 			StaticText(~alpha_juno_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~alpha_juno_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~alpha_juno_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1300,9 +1578,11 @@
 			});
 		});
 	});
+	knobs;
 });
 ~alpha_juno_page2_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "env attack", "env decay", "env sustain", "env release" ],
 		[ "", "", "", "" ],
@@ -1315,7 +1595,7 @@
 			StaticText(~alpha_juno_comp_views[index][2], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~alpha_juno_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~alpha_juno_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1336,6 +1616,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~megafm_comp_views = 6.collect({
@@ -1389,6 +1670,51 @@
 		\mod_rel, 0.5,
 	]);
 });
+~randomize_megafm = {
+	arg index;
+	var alg, car_ind;
+	//~anushri_page1_knobs[index]["row"]["column"]
+	alg = 8.rand;
+	switch(alg,
+		0, { car_ind = [3] },
+		1, { car_ind = [3] },
+		2, { car_ind = [3] },
+		3, { car_ind = [3] },
+		4, { car_ind = [1, 3] },
+		5, { car_ind = [1, 2, 3] },
+		6, { car_ind = [1, 2, 3] },
+		7, { car_ind = [0, 1, 2, 3] },
+	);
+	4.do({
+		|op|
+		// randomize all levels
+		~megafm_page1_knobs[index][0][op].valueAction_(1.0.rand);
+		~megafm_page1_knobs[index][2][op].valueAction_(0.05.exprand(1));
+		if(1.0.rand > 0.95, {
+			~megafm_page1_knobs[index][3][op].valueAction_(0.01.exprand(1));
+		}, {
+			~megafm_page1_knobs[index][3][op].valueAction_(0.1.rand);
+		});
+	});
+	car_ind.do({
+		|op|
+		// randomize all car levels but keep them all audible
+		~megafm_page1_knobs[index][0][op].valueAction_(0.5.rand + 0.5);
+	});
+	// make sure at least one carrier is audible
+	~megafm_page1_knobs[index][0][car_ind.choose].valueAction_(1);
+
+	~megafm_page2_knobs[index][0][0].valueAction_([0, 0.2.rand + 0.05].choose);
+	~megafm_page2_knobs[index][0][1].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][1][0].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][1][1].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][1][2].valueAction_(0.3.rand + 0.1);
+	~megafm_page2_knobs[index][2][0].valueAction_([0, 0.2.rand + 0.05].choose);
+	~megafm_page2_knobs[index][2][1].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][3][0].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][3][1].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][3][2].valueAction_(0.9.rand + 0.1);
+};
 ~megafm_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~megafm_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -1434,11 +1760,12 @@
 	StaticText(~megafm_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~megafm_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_megafm.value(index);
 	});
 });
 ~megafm_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "op 1 lvl", "op 2 lvl", "op 3 lvl", "op 4 lvl" ],
 		[ "algorithm", "", "", "feedback" ],
@@ -1451,7 +1778,7 @@
 			StaticText(~megafm_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~megafm_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~megafm_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1472,9 +1799,11 @@
 			});
 		});
 	});
+	knobs;
 });
 ~megafm_page2_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "car attack", "car decay", "", "" ],
 		[ "car sus lvl", "car sus rate", "car release", "" ],
@@ -1487,7 +1816,7 @@
 			StaticText(~megafm_comp_views[index][2], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~megafm_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~megafm_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1508,6 +1837,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~modal_comp_views = 6.collect({
@@ -1548,6 +1878,20 @@
 		\resonance, 0.5,
 	]);
 });
+~randomize_modal = {
+	arg index;
+	~modal_page1_knobs[index][0][0].valueAction_(0.5.rand + 0.25);
+	~modal_page1_knobs[index][0][1].valueAction_(0.5.rand + 0.25);
+	~modal_page1_knobs[index][0][3].valueAction_(0.5.rand + 0.25);
+	~modal_page1_knobs[index][1][0].valueAction_(1.0.rand);
+	~modal_page1_knobs[index][1][1].valueAction_(1.0.rand);
+	~modal_page1_knobs[index][1][2].valueAction_(0.8.rand);
+	~modal_page1_knobs[index][2][0].valueAction_(1.0.rand);
+	~modal_page1_knobs[index][2][1].valueAction_(0.5.rand + 0.25);
+	~modal_page1_knobs[index][2][2].valueAction_(0.6.rand + 0.15);
+	~modal_page1_knobs[index][2][3].valueAction_(0.6.rand + 0.15);
+	~modal_page1_knobs[index][3][0].valueAction_(0.7.rand + 0.1);
+};
 ~modal_macro_knobs1 = 6.collect({
 	|index|
 	StaticText(~modal_comp_views[index][0], Rect(10, 95, 60, 20) )
@@ -1593,11 +1937,12 @@
 	StaticText(~modal_comp_views[index][0], Rect(250, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
 	Button(~modal_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
-		// todo: generate a new patch for the synth
+		~randomize_modal.value(index);
 	});
 });
 ~modal_page1_knobs = 6.collect({
 	|index|
+	var knobs = nil!4!4;
 	[
 		[ "warp 1", "warp 2", "", "tilt" ],
 		[ "shape 1", "shape 2", "shape depth", "" ],
@@ -1610,7 +1955,7 @@
 			StaticText(~modal_comp_views[index][1], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
 			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 			if(item.size > 0, {
-				Knob.new(~modal_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
+				knobs[index2][index3] = Knob.new(~modal_comp_views[index][1], Rect(45+(index3*60), (index2*40), 50, 25) )
 				.mode_(\vert).action_({
 					|knob|
 					// todo: set values
@@ -1631,6 +1976,7 @@
 			});
 		});
 	});
+	knobs;
 });
 
 ~sampler_comp_views = 6.collect({
@@ -1704,6 +2050,498 @@
 	});
 });
 
+// comp views for samples
+~sample_comp_views = 8.collect({
+	|index|
+	CompositeView(~comp_view_global[2], Rect(0, 0, 330, 195)).background_(
+		Color.grey(0.3)
+	).visible_(false)
+});
+~sample_index = 0;
+~sample_label = StaticText(~comp_view_global[2], Rect(335, 10, 30, 10)).string_("track").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+~sample_buttons = 8.collect({
+	|index|
+	Button(~comp_view_global[2], Rect(340, 25+(index*20), 20, 15) ).action_({
+		// todo: make engine use correct synth
+
+		~sample_comp_views.do({
+		|cv, ind|
+		cv.visible = false;
+		});
+		~sample_comp_views[index].visible = true;
+		~sample_index = index;
+	});
+});
+
+
+~euclidean = {
+	arg steps, pulses, rotation;
+	var euclidean_pos, euclidean_trigs;
+	if(pulses > 0, {
+		euclidean_pos = (0..(pulses-1))/pulses*steps;
+		euclidean_pos = euclidean_pos.asInteger;
+
+		euclidean_trigs = 0!steps;
+		euclidean_pos.do({
+			|pos, index|
+			euclidean_trigs[pos] = 1;
+		});
+	}, {
+		euclidean_trigs = 0!steps;
+	});
+
+	euclidean_trigs.rotate(rotation);
+};
+
+~euclidean_generate_buttons = 8.collect({
+	|index|
+	Button.new(~sample_comp_views[index], Rect(10, 30, 15, 15))
+	.action_({
+		var eucl;
+		eucl = ~euclidean.value(~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor,
+			(~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor * ~euclidean_knobs[index][1].value).floor,
+			(~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor * ~euclidean_knobs[index][2].value).floor.asInteger);
+		~trigger_buttons[index].do({
+			|button, index2|
+			button.value = 0;
+		});
+		eucl.do({
+			|val, index2|
+			~trigger_buttons[index][index2].value = val;
+		});
+	});
+});
+~euclidean_knobs = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		Knob.new(~sample_comp_views[index], Rect(28 + (18*index2), 30, 15, 15))
+		.mode_(\vert).value_([1, 0.5, 0].at(index2));
+	});
+});
+
+~trigger_buttons = 8.collect({
+	|index|
+	16.collect({
+		|index2| // todo: cut up in 4 sections of 4 buttons
+		Button.new(~sample_comp_views[index], Rect(10 + (18*index2) + ((index2/4).floor*7.5) + ((index2/8).floor*2.5), 10, 15, 10)).states_([
+			["", Color.white, Color.white],
+			["", Color.red, Color.red]
+		]);
+	});
+});
+~trigger_indices = 0!8; ~global_sample_index = 0; ~trigger_lengths = 16!8;
+~trigger_step_views = 8.collect({
+	|index|
+	UserView(~sample_comp_views[index], Rect(8, 20, 315, 5))
+	.drawFunc_({
+		16.do({
+			|index2|
+			var pos;
+			pos = 10 + (18*index2) + ((index2/4).floor*7.5) + ((index2/8).floor*3.5);
+			Pen.line(pos@0, pos@5);
+			Pen.strokeColor = Color.red;
+			if(index2 == ~trigger_indices[index], {
+				Pen.strokeColor = Color.green;
+			});
+			if(~euclidean_knobs[index][0].value.isNil.not, {
+				if(index2 > ~euclidean_knobs[index][0].value.linlin(0, 1, 0, 15.99).floor, {
+					Pen.strokeColor = Color.black;
+				});
+			});
+			Pen.width = 15;
+			Pen.stroke;
+		});
+		if(~euclidean_knobs[index][0].value.isNil.not, {
+			~trigger_lengths[index] = ~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor;
+		});
+	}).animate_(true).frameRate_(30);
+});
+
+~euclidean_labels = 8.collect({
+	|index|
+	[
+		StaticText.new(~sample_comp_views[index], Rect(10+72+7.5, 30, 72, 15)).string_("gen, len, pls, phs").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8)),
+		StaticText.new(~sample_comp_views[index], Rect(171.5+72+7.5, 30, 72, 15)).string_("rnd, even, odd, pow").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8)),
+	]
+});
+~euclidean_randomize_buttons = 8.collect({
+	|index|
+	4.collect({
+		|index2|
+		Button.new(~sample_comp_views[index], Rect(171.5 + (18*index2), 30, 15, 15))
+		.action_({
+			|button|
+			var stepnr;
+			switch(index2,
+				0, {
+					stepnr = 16.rand;
+				},
+				1, {
+					stepnr = 8.rand * 2 + 1;
+				},
+				2, {
+					stepnr = 8.rand * 2;
+				},
+				3, {
+					stepnr = [0, 1, 3, 7, 15].choose;
+				}
+			);
+			~euclidean_knobs[index][0].value = stepnr.linlin(0, 15, 0.0001, 1);
+			~euclidean_knobs[index][1].value = 1.0.rand.linlin(0, 1, (1+stepnr)/16, 1);
+			~euclidean_knobs[index][2].value = 1.0.rand;
+			~euclidean_generate_buttons[index].valueAction = 0;
+		});
+	});
+});
+
+~param_type_index = 0!8;
+~param_type_buttons = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		Button.new(~sample_comp_views[index], Rect(35, 55+(20*index2), 15, 15))
+		.action_({
+			|button|
+			~param_type_index[index] = index2;
+			switch(index2,
+				0, {
+					~vel_bar_rand_comp_view[index].visible = true;
+					~vel_pattern_rand_comp_view[index].visible = true;
+					~dec_bar_rand_comp_view[index].visible = false;
+					~dec_pattern_rand_comp_view[index].visible = false;
+					~pan_bar_rand_comp_view[index].visible = false;
+					~pan_pattern_rand_comp_view[index].visible = false;
+					~vel_rand_param_knobs[index].do({ |knob, index3| knob.visible = true });
+					~dec_rand_param_knobs[index].do({ |knob, index3| knob.visible = false });
+					~pan_rand_param_knobs[index].do({ |knob, index3| knob.visible = false });
+				},
+				1, {
+					~vel_bar_rand_comp_view[index].visible = false;
+					~vel_pattern_rand_comp_view[index].visible = false;
+					~dec_bar_rand_comp_view[index].visible = true;
+					~dec_pattern_rand_comp_view[index].visible = true;
+					~pan_bar_rand_comp_view[index].visible = false;
+					~pan_pattern_rand_comp_view[index].visible = false;
+					~vel_rand_param_knobs[index].do({ |knob, index3| knob.visible = false });
+					~dec_rand_param_knobs[index].do({ |knob, index3| knob.visible = true });
+					~pan_rand_param_knobs[index].do({ |knob, index3| knob.visible = false });
+
+				},
+				2, {
+					~vel_bar_rand_comp_view[index].visible = false;
+					~vel_pattern_rand_comp_view[index].visible = false;
+					~dec_bar_rand_comp_view[index].visible = false;
+					~dec_pattern_rand_comp_view[index].visible = false;
+					~pan_bar_rand_comp_view[index].visible = true;
+					~pan_pattern_rand_comp_view[index].visible = true;
+					~vel_rand_param_knobs[index].do({ |knob, index3| knob.visible = false });
+					~dec_rand_param_knobs[index].do({ |knob, index3| knob.visible = false });
+					~pan_rand_param_knobs[index].do({ |knob, index3| knob.visible = true });
+
+				}
+			);
+		});
+	});
+});
+~param_type_text = 8.collect({
+	|index|
+	StaticText.new(~sample_comp_views[index], Rect(10, 75, 25, 15)).string_("type").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8))
+});
+~param_labels = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		StaticText.new(~sample_comp_views[index], Rect(50, 55+(20*index2), 25, 15))
+		.string_(["vel", "dec", "pan"].at(index2))
+		.stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8))
+	});
+});
+~param_rand_buttons = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		Button.new(~sample_comp_views[index], Rect(75, 55+(20*index2), 15, 15))
+		.action_({
+			|button|
+			switch(index2,
+				0, {
+					~vel_bar_vals[index] = {1.0.rand}!16; ~vel_pattern_vals[index] = {1.0.rand}!16;
+				},
+				1, {
+					~dec_bar_vals[index] = {1.0.rand}!16; ~dec_pattern_vals[index] = {1.0.rand}!16;
+				},
+				2, {
+					~pan_bar_vals[index] = {1.0.rand}!16; ~pan_pattern_vals[index] = {1.0.rand}!16;
+				}
+			);
+		});
+	});
+});
+~param_rand_text = 8.collect({
+	|index|
+	StaticText.new(~sample_comp_views[index], Rect(90, 75, 25, 15)).string_("rand").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8))
+});
+
+~vel_bar_vals = {1.0.rand}!16!8; ~vel_pattern_vals = {1.0.rand}!16!8;
+~vel_bar_rand_comp_view = 8.collect({
+	|index|
+	UserView.new(~sample_comp_views[index], Rect(120, 55, 175, 25)).background_(Color.white).drawFunc_({
+		~vel_bar_vals[index].do({
+			|val, index2|
+			var pos, knob_val;
+			knob_val = ~vel_rand_param_knobs[index][0].value;
+			val = [knob_val.linlin(0, 0.5, 0, val), knob_val.linlin(0.5, 1, val, 1)].at((knob_val*1.999).asInteger);
+			pos = 175/16*index2+7;
+			Pen.line(pos@25, pos@(25*(1-val)));
+			Pen.strokeColor = Color.gray(0.5);
+			if(index2 == ~global_sample_index, {
+				Pen.strokeColor = Color.green;
+			});
+			Pen.width = 175/16;
+			Pen.stroke;
+		});
+	}).animate_(true).frameRate_(30).visible_(true);
+});
+~vel_pattern_rand_comp_view = 8.collect({
+	|index|
+	UserView.new(~sample_comp_views[index], Rect(120, 85, 175, 25)).background_(Color.white).drawFunc_({
+		var num_steps;
+		if(~euclidean_knobs[index][0].value.isNil.not, {
+			num_steps = ~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor;
+		}, { num_steps = 0 });
+		(~vel_pattern_vals[index].at( (0..num_steps-1) )).do({
+			|val, index2|
+			var pos, knob_val;
+			knob_val = ~vel_rand_param_knobs[index][2].value;
+			val = [knob_val.linlin(0, 0.5, 0, val), knob_val.linlin(0.5, 1, val, 1)].at((knob_val*1.999).asInteger);
+			pos = 175/num_steps*(index2+0.5);
+			Pen.line(pos@25, pos@(25*(1-val)));
+			Pen.strokeColor = Color.gray(0.5);
+			if(index2 == ~trigger_indices[index], {
+				Pen.strokeColor = Color.green;
+			});
+			Pen.width = 175/num_steps;
+			Pen.stroke;
+		});
+	}).animate_(true).frameRate_(30).visible_(true);
+});
+~vel_rand_param_knobs = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		Knob.new(~sample_comp_views[index], Rect(305, 55 + (index2*20), 15, 15))
+		.value_( [1, 0, 0.5].at(index2) ).visible_(true).mode_(\vert);
+	});
+});
+
+~dec_bar_vals = {1.0.rand}!16!8; ~dec_pattern_vals = {1.0.rand}!16!8;
+~dec_bar_rand_comp_view = 8.collect({
+	|index|
+	UserView.new(~sample_comp_views[index], Rect(120, 55, 175, 25)).background_(Color.white).drawFunc_({
+		~dec_bar_vals[index].do({
+			|val, index2|
+			var pos, knob_val;
+			knob_val = ~dec_rand_param_knobs[index][0].value;
+			val = [knob_val.linlin(0, 0.5, 0, val), knob_val.linlin(0.5, 1, val, 1)].at((knob_val*1.999).asInteger);
+			pos = 175/16*index2+7;
+			Pen.line(pos@25, pos@(25*(1-val)));
+			Pen.strokeColor = Color.gray(0.5);
+			if(index2 == ~global_sample_index, {
+				Pen.strokeColor = Color.green;
+			});
+			Pen.width = 175/16;
+			Pen.stroke;
+		});
+	}).animate_(true).frameRate_(30).visible_(false);
+});
+~dec_pattern_rand_comp_view = 8.collect({
+	|index|
+	UserView.new(~sample_comp_views[index], Rect(120, 85, 175, 25)).background_(Color.white).drawFunc_({
+		var num_steps;
+		if(~euclidean_knobs[index][0].value.isNil.not, {
+			num_steps = ~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor;
+		}, { num_steps = 0 });
+		(~dec_pattern_vals[index].at( (0..num_steps-1) )).do({
+			|val, index2|
+			var pos, knob_val;
+			knob_val = ~dec_rand_param_knobs[index][2].value;
+			val = [knob_val.linlin(0, 0.5, 0, val), knob_val.linlin(0.5, 1, val, 1)].at((knob_val*1.999).asInteger);
+			pos = 175/num_steps*(index2+0.5);
+			Pen.line(pos@25, pos@(25*(1-val)));
+			Pen.strokeColor = Color.gray(0.5);
+			if(index2 == ~trigger_indices[index], {
+				Pen.strokeColor = Color.green;
+			});
+			Pen.width = 175/num_steps;
+			Pen.stroke;
+		});
+	}).animate_(true).frameRate_(30).visible_(false);
+});
+~dec_rand_param_knobs = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		Knob.new(~sample_comp_views[index], Rect(305, 55 + (index2*20), 15, 15))
+		.value_( [1, 0, 0.5].at(index2) ).visible_(false).mode_(\vert);
+	});
+});
+
+~pan_bar_vals = {1.0.rand}!16!8; ~pan_pattern_vals = {1.0.rand}!16!8;
+~pan_bar_rand_comp_view = 8.collect({
+	|index|
+	UserView.new(~sample_comp_views[index], Rect(120, 55, 175, 25)).background_(Color.white).drawFunc_({
+		~pan_bar_vals[index].do({
+			|val, index2|
+			var pos, knob_val;
+			knob_val = ~pan_rand_param_knobs[index][0].value;
+			if(val < 0.5, {
+				val = [knob_val.linlin(0, 0.5, 0.5, val), knob_val.linlin(0.5, 1, val, 0)].at((knob_val*1.999).asInteger);
+			}, {
+				val = [knob_val.linlin(0, 0.5, 0.5, val), knob_val.linlin(0.5, 1, val, 1)].at((knob_val*1.999).asInteger);
+			});
+			pos = 175/16*index2+7;
+			Pen.line(pos@12.5, pos@(25*(1-val)));
+			Pen.strokeColor = Color.gray(0.5);
+			if(index2 == ~global_sample_index, {
+				Pen.strokeColor = Color.green;
+			});
+			Pen.width = 175/16;
+			Pen.stroke;
+		});
+	}).animate_(true).frameRate_(30).visible_(false);
+});
+~pan_pattern_rand_comp_view = 8.collect({
+	|index|
+	UserView.new(~sample_comp_views[index], Rect(120, 85, 175, 25)).background_(Color.white).drawFunc_({
+		var num_steps;
+		if(~euclidean_knobs[index][0].value.isNil.not, {
+			num_steps = ~euclidean_knobs[index][0].value.linlin(0, 1, 1, 16.99).floor;
+		}, { num_steps = 0 });
+		(~pan_pattern_vals[index].at( (0..num_steps-1) )).do({
+			|val, index2|
+			var pos, knob_val;
+			knob_val = ~pan_rand_param_knobs[index][2].value;
+			if(val < 0.5, {
+				val = [knob_val.linlin(0, 0.5, 0.5, val), knob_val.linlin(0.5, 1, val, 0)].at((knob_val*1.999).asInteger);
+			}, {
+				val = [knob_val.linlin(0, 0.5, 0.5, val), knob_val.linlin(0.5, 1, val, 1)].at((knob_val*1.999).asInteger);
+			});
+			pos = 175/num_steps*(index2+0.5);
+			Pen.line(pos@12.5, pos@(25*(1-val)));
+			Pen.strokeColor = Color.gray(0.5);
+			if(index2 == ~trigger_indices[index], {
+				Pen.strokeColor = Color.green;
+			});
+			Pen.width = 175/num_steps;
+			Pen.stroke;
+		});
+	}).animate_(true).frameRate_(30).visible_(false);
+});
+~pan_rand_param_knobs = 8.collect({
+	|index|
+	3.collect({
+		|index2|
+		Knob.new(~sample_comp_views[index], Rect(305, 55 + (index2*20), 15, 15))
+		.value_( [0, 0, 0.5].at(index2) ).visible_(false).mode_(\vert);
+	});
+});
+
+~sound_file_dict = Dictionary.new;
+
+~sample_folder = (PathName(thisProcess.nowExecutingPath).parentPath.asString ++ "GrooveBox\ Samples/").asPathName.folders;
+~sample_folder_items = ~sample_folder.size.collect({
+	|index|
+	var folder_name, files;
+	folder_name = ~sample_folder[index].folderName;
+	files = ~sample_folder[index].files;
+	~sound_file_dict[folder_name.asSymbol] = Dictionary.new;
+	files.do({
+		|file, index2|
+		var path;
+		path = file.asAbsolutePath;
+		~sound_file_dict[folder_name.asSymbol][file.fileName.asSymbol] = SoundFile.new;
+		~sound_file_dict[folder_name.asSymbol][file.fileName.asSymbol].openRead(
+			path
+		);
+	});
+	folder_name;
+});
+
+~sample_waveforms = 8.collect({
+	|index|
+	SoundFileView.new(~sample_comp_views[index], Rect(10, 160, 270, 30));
+});
+~sample_levels = 1!8;
+~sample_level_knobs = 8.collect({
+	|index|
+	Knob.new(~sample_comp_views[index], Rect(290, 160, 30, 30))
+	.action_({
+		|knob|
+		~sample_levels[index] = knob.value.linlin(0, 1, -60, 0).dbamp;
+		if(knob.value == 0, { ~sample_levels[index] = 0 });
+	}).value_(1).mode_(\vert);
+});
+~update_waveform = {
+	arg index;//, menu_nr, file_nr;
+	var sf;
+	sf = ~sound_file_dict[
+		~sample_folder_menu[index].item.asSymbol
+	][
+		~sample_menu[index].item.asSymbol
+	];
+	~sample_waveforms[index].soundfile = sf;
+	~sample_waveforms[index].read(0, sf.numFrames);
+};
+
+~sample_folder_menu = 8.collect({
+	|index|
+	StaticText(~sample_comp_views[index], Rect(10, 115, 150, 10) )
+	.string_("sample folder").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	PopUpMenu(~sample_comp_views[index], Rect(10, 130, 150, 20) )
+	.items_(
+		~sample_folder_items
+	).action_({ |menu|
+		~sample_menu[index].items =
+		~sample_folder[ menu.value ].files.collect({
+			|file| file.fileName;
+		});
+		~update_waveform.value(index);
+	});
+});
+
+~set_sample_items = {
+	~sample_items = nil!8;
+	8.do({
+		|index|
+		var files;
+		files = (PathName(thisProcess.nowExecutingPath).parentPath.asString ++ "GrooveBox\ Samples/").asPathName.folders[ ~sample_folder_menu[index].value ].files;
+		~sample_items[index] = files.collect({
+			|file, index2|
+			file.fileName;
+		});
+	});
+};
+~set_sample_items.value;
+
+~sample_menu = 8.collect({
+	|index|
+	StaticText(~sample_comp_views[index], Rect(170, 115, 150, 10) )
+	.string_("sample select").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	PopUpMenu(~sample_comp_views[index], Rect(170, 130, 150, 20) )
+	.items_(
+		~sample_items[index];
+	).action_({
+		|menu|
+		~update_waveform.value(index);
+	});
+});
+
+8.do({
+	|index|
+	~update_waveform.value(index);
+});
+
 // effect send params
 
 // initialization
@@ -1711,5 +2549,7 @@
 6.do({
 	|index|
 	~sequencer_type_comp_views[index][0].visible = true;
+	~synth_type_buttons[index][0].valueAction = 1;
+	~anushri_page_buttons[index][0].valueAction = 1;
 });
-
+~sample_buttons[0].valueAction = 1;
