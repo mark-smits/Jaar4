@@ -1,12 +1,15 @@
 ~server_options = Server.default.options; ~server_options.blockSize = 256; s.boot;
 
-~bpm = 130; ~swing = 0.6; ~lfo_bus = Bus.audio(s, 1); ~mixer_busses = 8.collect({ Bus.audio(s, 2); });
+~bpm = 130; ~swing = 0.6; ~lfo_busses = 6.collect({ Bus.control(s, 1); }); ~mixer_busses = 8.collect({ Bus.audio(s, 2); });
 
 ~lfo_group = Group.new; ~synth_group = Group.new(s, \addToTail); ~mixer_group = Group.new(s, \addToTail);
+
+MIDIClient.init; MIDIIn.connectAll;
 
 ("./GrooveBoxUI.scd").loadRelative;
 ("./GrooveBoxSynthDefs.scd").loadRelative;
 ("./GrooveBoxTask.scd").loadRelative;
+("./GrooveBoxMIDI.scd").loadRelative;
 
 (
 ~mixer = Synth.new(\mixer, [
@@ -19,6 +22,26 @@
 	\chan7_in, ~mixer_busses[6],
 	\chan8_in, ~mixer_busses[7],
 ], ~mixer_group);
+~lfos = Synth.new(\lfos, [
+	\out1, ~lfo_busses[0],
+	\out2, ~lfo_busses[1],
+	\out3, ~lfo_busses[2],
+	\out4, ~lfo_busses[3],
+	\out5, ~lfo_busses[4],
+	\out6, ~lfo_busses[5],
+	\r1, 1,
+	\r2, 1,
+	\r3, 1,
+	\r4, 1,
+	\r5, 1,
+	\r6, 1,
+	\sh1, 0,
+	\sh2, 0,
+	\sh3, 0,
+	\sh4, 0,
+	\sh5, 0,
+	\sh6, 0,
+], ~lfo_group);
 )
 
 r.play;

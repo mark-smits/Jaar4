@@ -72,11 +72,11 @@
 ~tempo_knob = Knob.new(~comp_view_global[3], Rect(240, 135, 30, 30)).mode_(\vert).action_({
 	|knob|
 	~bpm = knob.value.linlin(0, 1, 60, 180);
-}).valueAction_(7.0/12);
+}).valueAction_(7.0/12).keystep_(0.025);
 ~swing_knob = Knob.new(~comp_view_global[3], Rect(280, 135, 30, 30)).mode_(\vert).action_({
 	|knob|
 	~swing = knob.value.linlin(0, 1, 0.5, 0.9);
-}).valueAction_(0.4);
+}).valueAction_(0.4).keystep_(0.025);
 ~regen_button = Button.new(~comp_view_global[3], Rect(320, 135, 30, 30)).action_({
 	~groovebox.regen_chords;
 });
@@ -98,7 +98,7 @@
 		0.5,
 		0,
 		0.1
-	].at(index));
+	].at(index)).keystep_(0.025);
 });
 ~reverb_knobs = 3.collect({
 	|index|
@@ -114,15 +114,16 @@
 		].at(index));
 	}).valueAction_([
 		0,
-		0.65,
+		0.35,
 		0.5
-	].at(index));
+	].at(index)).keystep_(0.025);
 });
 
 // comp views for sequencers
+~track_index = 0;
 ~track_buttons = 6.collect({
 	|index|
-	Button(~comp_view_global[0], Rect(10+(index*60), 10, 50, 10) )
+	Button(~comp_view_global[0], Rect(10+(index*60), 10, 50, 10) );
 });
 ~track_buttons.do({
 	|button, index|
@@ -142,6 +143,7 @@
 			cv.visible = false;
 		});
 		~synth_comp_views[ index ].visible_(true);
+		~track_index = index;
 	});
 });
 ~sequencer_comp_views = 6.collect({
@@ -150,6 +152,7 @@
 		Color.grey(0.3)
 	).visible_(false)
 });
+~sequencer_type_index = 0!6;
 ~sequencer_type_buttons = 6.collect({
 	|index|
 	4.collect({
@@ -161,6 +164,7 @@
 				cv.visible = false;
 			});
 			~sequencer_type_comp_views[index][index2].visible = true;
+			~sequencer_type_index[index] = index2;
 		});
 	})
 });
@@ -239,11 +243,11 @@
 });
 ~sequencer_length_knobs = 6.collect({
 	|index|
-	Knob.new(~sequencer_comp_views[index], Rect(40, 10, 20, 20) ).mode_(\vert).action_({
+	Knob.new(~sequencer_comp_views[index], Rect(40, 10, 20, 20) ).mode_(\vert).value_(15/127).action_({
 		|knob|
-		~groovebox.set_pattern_length(index, (knob.value*126.99).floor+1);
+		~groovebox.set_pattern_length(index, (knob.value*127.99).floor+1);
 		~sequencer_length_labels[index].string = "length: " ++ ~groovebox.get_pattern_length(index).asInteger.asString;
-	});
+	}).keystep_(1/127);
 });
 ~sequencer_uses_global_scale_buttons = 6.collect({
 	|index|
@@ -265,7 +269,7 @@
 		|knob|
 		~groovebox.set_pattern_syncing_lengths_bars(index, (knob.value*7.99).floor+1);
 		~sequencer_sync_length_labels[index].string = "sync len: " ++ ((knob.value*7.99).floor+1).asInteger.asString;
-	});
+	}).keystep_(1/7);
 });
 ~sequencer_sync_buttons = 6.collect({
 	|index|
@@ -282,12 +286,12 @@
 });
 ~sequencer_octave_knobs = 6.collect({
 	|index|
-	Knob.new(~sequencer_comp_views[index], Rect(140, 40, 20, 20) ).mode_(\vert)
+	Knob.new(~sequencer_comp_views[index], Rect(140, 40, 20, 20) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
 		~groovebox.set_octave_offset(index, knob.value.linlin(0, 1, -2, 2.99).floor);
 		~sequencer_octave_labels[index].string = "octave: " ++ knob.value.linlin(0, 1, -2, 2.99).floor.asInteger.asString;
-	});
+	}).keystep_(0.25);
 });
 ~sequencer_randomize_buttons = 6.collect({
 	|index|
@@ -373,7 +377,7 @@
 			].at(index2));
 		});
 	})
-	.isFilled_(true).indexThumbSize_(10).gap_(0).indexIsHorizontal_(false);
+	.isFilled_(true).indexThumbSize_(10).gap_(0).indexIsHorizontal_(false).step_(0.1);
 });
 ~acd_gen_seq_mode_menus = 6.collect({
 	|index|
@@ -394,7 +398,7 @@
 	StaticText(~sequencer_type_comp_views[index][1], Rect(0, 50, 50, 10) )
 	.string_("density").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
 	Knob.new(~sequencer_type_comp_views[index][1], Rect(10, 20, 30, 30) ).mode_(\vert)
-	.action_({|knob| ~groovebox.set_acdgen_key(index, \density, (knob.value*100.99).floor) });
+	.action_({|knob| ~groovebox.set_acdgen_key(index, \density, (knob.value*100.99).floor) }).keystep_(0.05).value_(1);
 });
 ~acd_gen_variation_labels = 6.collect({
 	|index|
@@ -408,7 +412,7 @@
 		|knob|
 		~groovebox.set_acdgen_key(index, \variation, (knob.value*2.99).floor);
 		~acd_gen_variation_labels[index].string = "variation " ++ (knob.value*2.99).floor.asInteger;
-	});
+	}).keystep_(0.5);
 });
 ~acd_gen_mutation_knobs = 6.collect({
 	|index|
@@ -418,7 +422,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_mutation_chance(index, knob.value);
-	});
+	}).keystep_(0.05);
 });
 
 ~srm_bl001_bassline_velocity_knobs = 6.collect({
@@ -429,7 +433,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_srm_key(index, \basslineVel, (knob.value*127.99).floor);
-	});
+	}).keystep_(0.1).value_(96/127);
 });
 ~srm_bl001_front_weight_knobs = 6.collect({
 	|index|
@@ -439,7 +443,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_srm_key(index, \frontWeight, (knob.value*100.99).floor);
-	});
+	}).keystep_(0.1).value_(0.6);
 });
 ~srm_bl001_note_probability_knobs = 6.collect({
 	|index|
@@ -449,7 +453,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_srm_key(index, \noteProbability, (knob.value*100.99).floor);
-	});
+	}).keystep_(0.1).value_(1);
 });
 ~srm_bl001_accent_probabilty_knobs = 6.collect({
 	|index|
@@ -459,7 +463,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_srm_key(index, \accentProbability, (knob.value*100.99).floor);
-	});
+	}).keystep_(0.1).value_(0.8);
 });
 ~srm_bl001_accent_intensity_knobs = 6.collect({
 	|index|
@@ -469,7 +473,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_srm_key(index, \accentIntensity, (knob.value*100.99).floor);
-	});
+	}).keystep_(0.1).value_(0.8);
 });
 ~srm_bl001_slide_probability_knobs = 6.collect({
 	|index|
@@ -479,7 +483,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_srm_key(index, \slideProbability, (knob.value*100.99).floor);
-	});
+	}).keystep_(0.1).value_(0.3);
 });
 
 ~sting_density_knobs = 6.collect({
@@ -490,7 +494,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_sting64_performable_density(index, (knob.value*63.99).floor);
-	});
+	}).keystep_(1/63);
 });
 ~sting_type_knobs = 6.collect({
 	|index|
@@ -500,7 +504,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_sting64_pitch_density(index, (knob.value*63.99).floor);
-	});
+	}).keystep_(1/63);
 });
 ~sting_mutation_knobs = 6.collect({
 	|index|
@@ -510,7 +514,7 @@
 	.action_({
 		|knob|
 		~groovebox.set_mutation_chance(index, knob.value);
-	});
+	}).keystep_(0.1);
 });
 
 // comp views for synths
@@ -560,6 +564,7 @@
 		).visible_(false)
 	})
 });
+~anushri_page_indices = 0!6;
 ~anushri_page_buttons = 6.collect({
 	|index|
 	4.collect({
@@ -570,6 +575,7 @@
 				cv.visible = false;
 			});
 			~anushri_comp_views[index][index2].visible_(true);
+			~anushri_page_indices[index] = index2;
 		});
 	})
 });
@@ -608,10 +614,15 @@
 		\pwm_amount, 0,
 		\sync_amount, 0,
 		\ffreq_amount, 0,
+		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_anushri = {
 	arg index;
+	var filt;
+	filt = 0.7.rand + 0.3;
 	//~anushri_page1_knobs[index]["row"]["column"]
 	~anushri_page1_knobs[index][0][0].valueAction_(1.0.rand);
 	~anushri_page1_knobs[index][0][2].valueAction_([0, 1].wchoose([0.95, 0.05]));
@@ -627,18 +638,19 @@
 	~anushri_page1_knobs[index][3][2].valueAction_(1.0.rand);
 	~anushri_page1_knobs[index][3][3].valueAction_(0.9.rand + 0.1);
 
-	~anushri_page2_knobs[index][0][0].valueAction_(1.0.rand);
+	~anushri_page2_knobs[index][0][0].valueAction_(filt);
 	~anushri_page2_knobs[index][0][1].valueAction_(0.9.rand);
-	~anushri_page2_knobs[index][0][2].valueAction_(1.0.rand);
+	~anushri_page2_knobs[index][0][2].valueAction_(1.0.rand.linlin(0, 1, 0, 1-filt));
 	~anushri_page2_knobs[index][1][0].valueAction_([0, 1].choose);
 	~anushri_page2_knobs[index][1][1].valueAction_(1.0.rand);
 	~anushri_page2_knobs[index][3][1].valueAction_(0.9.rand + 0.1);
 	~anushri_page2_knobs[index][3][2].valueAction_(1.0.rand);
 	~anushri_page2_knobs[index][3][3].valueAction_(0.9.rand + 0.1);
 
+	~anushri_page3_knobs[index][0][3].valueAction_(1.0.rand);
 	~anushri_page3_knobs[index][0][1].valueAction_(1.0.rand);
 	~anushri_page3_knobs[index][1][0].valueAction_(1.0.rand);
-	~anushri_page3_knobs[index][1][1].valueAction_(1.0.rand);
+	~anushri_page3_knobs[index][1][1].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
 	~anushri_page3_knobs[index][1][3].valueAction_(1.0.rand);
 	~anushri_page3_knobs[index][3][0].valueAction_(0);
 	~anushri_page3_knobs[index][3][1].valueAction_(0);
@@ -658,7 +670,7 @@
 				~anushri_page3_knobs[index][3][2].valueAction_(1.0.rand);
 			},
 			3, {
-				~anushri_page3_knobs[index][3][3].valueAction_(1.0.rand);
+				~anushri_page3_knobs[index][3][3].valueAction_(1.0.rand.linlin(0, 1, 0, 1-filt));
 			}
 		);
 	});
@@ -677,49 +689,29 @@
 };
 ~anushri_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~anushri_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~anushri_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~anushri_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~anushri_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~anushri_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~anushri_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~anushri_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~anushri_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~anushri_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~anushri_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~anushri_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~anushri_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~anushri_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~anushri_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~anushri_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~anushri_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~anushri_regen_buttons = 6.collect({
 	|index|
-	StaticText(~anushri_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~anushri_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~anushri_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~anushri_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_anushri.value(index);
 	});
 });
@@ -803,7 +795,7 @@
 	|index|
 	var knobs = nil!4!4;
 	[
-		[ "mod attack", "mod decay", "", "" ],
+		[ "mod attack", "mod decay", "", "chorus" ],
 		[ "lfo rate", "lfo shape", "", "mod balance" ],
 		[ "", "", "", "" ],
 		[ "freq mod", "pwm mod", "sync mod", "f. freq mod" ],
@@ -820,14 +812,14 @@
 					// todo: set values
 					var symbol;
 					symbol = [
-						[ \mod_attack, \mod_decay, nil, nil ],
+						[ \mod_attack, \mod_decay, nil, \chorus ],
 						[ \lfo_rate, \lfo_shape, nil, \mod_balance ],
 						[ nil, nil, nil, nil ],
 						[ \freq_amount, \pwm_amount, \sync_amount, \ffreq_amount ],
 					].at(index2).at(index3);
 					~anushri_dicts[index][symbol] = knob.value;
 				}).value_([
-					[ 0, 0.5, nil, nil, ],
+					[ 0, 0.5, nil, 0, ],
 					[ 0.5, 0, nil, 0, ],
 					[ nil, nil, nil, nil, ],
 					[ 0, 0, 0, 0, ],
@@ -847,6 +839,7 @@
 		).visible_(false)
 	})
 });
+~sh101_page_indices = 0!6;
 ~sh101_page_buttons = 6.collect({
 	|index|
 	3.collect({
@@ -857,6 +850,7 @@
 				cv.visible = false;
 			});
 			~sh101_comp_views[index][index2].visible_(true);
+			~sh101_page_indices[index] = index2;
 		});
 	})
 });
@@ -878,9 +872,13 @@
 		\filter_res, 0.5,
 		\filter_env_amount, 0.5,
 		\lfo_rate, 0.5,
+		\lfo_shape, 0,
 		\freq_amount, 0,
 		\pwm_amount, 0,
 		\ffreq_amount, 0,
+		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_sh101 = {
@@ -902,6 +900,8 @@
 	~sh101_page2_knobs[index][0][2].valueAction_(1.0.rand);
 	~sh101_page2_knobs[index][0][3].valueAction_(0.9.rand + 0.1);
 	~sh101_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~sh101_page2_knobs[index][2][1].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
+	~sh101_page2_knobs[index][2][3].valueAction_(1.0.rand);
 	~sh101_page2_knobs[index][3][0].valueAction_(0);
 	~sh101_page2_knobs[index][3][1].valueAction_(0);
 	~sh101_page2_knobs[index][3][2].valueAction_(0);
@@ -923,49 +923,29 @@
 };
 ~sh101_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~sh101_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~sh101_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sh101_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~sh101_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~sh101_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~sh101_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~sh101_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sh101_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~sh101_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~sh101_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sh101_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~sh101_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~sh101_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~sh101_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sh101_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~sh101_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~sh101_regen_buttons = 6.collect({
 	|index|
-	StaticText(~sh101_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~sh101_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~sh101_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~sh101_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_sh101.value(index);
 	});
 });
@@ -1013,7 +993,7 @@
 	[
 		[ "env attack", "env decay", "env sustain", "env release" ],
 		[ "", "", "", "" ],
-		[ "lfo rate", "", "", "" ],
+		[ "lfo rate", "lfo shape", "", "chorus" ],
 		[ "freq mod", "pwm mod", "f. freq mod", "" ],
 	].do({
 		|list, index2|
@@ -1030,14 +1010,14 @@
 					symbol = [
 						[ \env_attack, \env_decay, \env_sustain, \env_release ],
 						[ nil, nil, nil, nil ],
-						[ \lfo_rate, nil, nil, nil ],
+						[ \lfo_rate, \lfo_shape, nil, \chorus ],
 						[ \freq_amount, \pwm_amount, \ffreq_amount, nil ],
 					].at(index2).at(index3);
 					~sh101_dicts[index][symbol] = knob.value;
 				}).value_([
 					[ 0, 0.5, 0.5, 0.5, ],
 					[ nil, nil, nil, nil, ],
-					[ 0.5, nil, nil, nil, ],
+					[ 0.5, 0, nil, 0, ],
 					[ 0, 0, 0, nil, ],
 				].at(index2).at(index3));
 			});
@@ -1048,23 +1028,25 @@
 
 ~buchla_comp_views = 6.collect({
 	|index|
-	2.collect({
+	3.collect({
 		|index2|
 		CompositeView(~synth_type_comp_views[index][2], Rect(0, 30, 330, 165)).background_(
 			Color.grey(0.3)
 		).visible_(false)
 	})
 });
+~buchla_page_indices = 0!6;
 ~buchla_page_buttons = 6.collect({
 	|index|
-	2.collect({
+	3.collect({
 		|index2|
-		Button(~synth_type_comp_views[index][2], Rect(105+(60*index2), 10, 50, 10)).action_({
+		Button(~synth_type_comp_views[index][2], Rect(75+(60*index2), 10, 50, 10)).action_({
 			~buchla_comp_views[index].do({
 				|cv, ind|
 				cv.visible = false;
 			});
 			~buchla_comp_views[index][index2].visible_(true);
+			~buchla_page_indices[index] = index2;
 		});
 	})
 });
@@ -1085,6 +1067,14 @@
 		\folds, 0,
 		\env_fold, 0,
 		\clip, 0,
+		\lfo_rate, 0.5,
+		\lfo_shape, 0,
+		\lfo_bend, 0,
+		\lfo_mod, 0,
+		\lfo_fold, 0,
+		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_buchla = {
@@ -1104,52 +1094,52 @@
 	~buchla_page1_knobs[index][3][0].valueAction_(0.4.rand);
 	~buchla_page1_knobs[index][3][1].valueAction_(0.3.rand);
 	~buchla_page1_knobs[index][3][3].valueAction_(1.0.rand);
+
+	~buchla_page2_knobs[index][0][3].valueAction_(1.0.rand);
+	~buchla_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~buchla_page2_knobs[index][2][1].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
+	~buchla_page2_knobs[index][3][0].valueAction_(0);
+	~buchla_page2_knobs[index][3][1].valueAction_(0);
+	~buchla_page2_knobs[index][3][2].valueAction_(0);
+	2.do({
+		switch(3.rand,
+			0, {
+				~buchla_page2_knobs[index][3][0].valueAction_(1.0.rand);
+			},
+			1, {
+				~buchla_page2_knobs[index][3][1].valueAction_(1.0.rand);
+			},
+			2, {
+				~buchla_page2_knobs[index][3][2].valueAction_(1.0.rand);
+			}
+		);
+	});
 };
 ~buchla_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~buchla_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~buchla_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~buchla_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~buchla_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~buchla_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~buchla_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~buchla_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~buchla_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~buchla_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~buchla_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~buchla_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~buchla_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~buchla_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~buchla_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~buchla_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~buchla_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~buchla_regen_buttons = 6.collect({
 	|index|
-	StaticText(~buchla_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~buchla_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~buchla_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~buchla_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_buchla.value(index);
 	});
 });
@@ -1191,6 +1181,44 @@
 	});
 	knobs;
 });
+~buchla_page2_knobs = 6.collect({
+	|index|
+	var knobs = nil!4!4;
+	[
+		[ "", "", "", "chorus" ],
+		[ "", "", "", "" ],
+		[ "lfo rate", "lfo shape", "", "" ],
+		[ "mod", "bend", "fold", "" ],
+	].do({
+		|list, index2|
+		list.do({
+			|item, index3|
+			StaticText(~buchla_comp_views[index][2], Rect(45+(index3*60), 25+(index2*40), 50, 10) )
+			.string_(item).stringColor_(Color.white).align_(\center).font_( Font("Monaco", 8) );
+			if(item.size > 0, {
+				knobs[index2][index3] = Knob.new(~buchla_comp_views[index][2], Rect(45+(index3*60), (index2*40), 50, 25) )
+				.mode_(\vert).action_({
+					|knob|
+					// todo: set values
+					var symbol;
+					symbol = [
+						[ nil, nil, nil, \chorus ],
+						[ nil, nil, nil, nil ],
+						[ \lfo_rate, \lfo_shape, nil, nil ],
+						[ \lfo_mod, \lfo_bend, \lfo_fold, nil ],
+					].at(index2).at(index3);
+					~buchla_dicts[index][symbol] = knob.value;
+				}).value_([
+					[ nil, nil, nil, 0 ],
+					[ nil, nil, nil, nil ],
+					[ 0.5, 0, nil, nil, ],
+					[ 0, 0, 0, nil, ],
+				].at(index2).at(index3));
+			});
+		});
+	});
+	knobs;
+});
 
 ~juno6_comp_views = 6.collect({
 	|index|
@@ -1201,6 +1229,7 @@
 		).visible_(false)
 	})
 });
+~juno6_page_indices = 0!6;
 ~juno6_page_buttons = 6.collect({
 	|index|
 	3.collect({
@@ -1211,6 +1240,7 @@
 				cv.visible = false;
 			});
 			~juno6_comp_views[index][index2].visible_(true);
+			~juno6_page_indices[index] = index2;
 		});
 	})
 });
@@ -1232,10 +1262,13 @@
 		\filter_env_amount, 0.5,
 		\hpf_freq, 0,
 		\lfo_rate, 0.5,
+		\lfo_shape, 0,
 		\freq_amount, 0,
 		\pwm_amount, 0,
 		\ffreq_amount, 0,
 		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_juno6 = {
@@ -1257,6 +1290,7 @@
 	~juno6_page2_knobs[index][0][2].valueAction_(1.0.rand);
 	~juno6_page2_knobs[index][0][3].valueAction_(0.9.rand + 0.1);
 	~juno6_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~juno6_page2_knobs[index][2][1].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
 	~juno6_page2_knobs[index][3][0].valueAction_(0);
 	~juno6_page2_knobs[index][3][1].valueAction_(0);
 	~juno6_page2_knobs[index][3][2].valueAction_(0);
@@ -1278,49 +1312,29 @@
 };
 ~juno6_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~juno6_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~juno6_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~juno6_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~juno6_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~juno6_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~juno6_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~juno6_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~juno6_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~juno6_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~juno6_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~juno6_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~juno6_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~juno6_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~juno6_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~juno6_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~juno6_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~juno6_regen_buttons = 6.collect({
 	|index|
-	StaticText(~juno6_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~juno6_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~juno6_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~juno6_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_juno6.value(index);
 	});
 });
@@ -1368,7 +1382,7 @@
 	[
 		[ "env attack", "env decay", "env sustain", "env release" ],
 		[ "", "", "", "" ],
-		[ "lfo rate", "", "", "" ],
+		[ "lfo rate", "lfo shape", "", "" ],
 		[ "freq mod", "pwm mod", "f. freq mod", "" ],
 	].do({
 		|list, index2|
@@ -1385,14 +1399,14 @@
 					symbol = [
 						[ \env_attack, \env_decay, \env_sustain, \env_release ],
 						[ nil, nil, nil, nil ],
-						[ \lfo_rate, nil, nil, nil ],
+						[ \lfo_rate, \lfo_shape, nil, nil ],
 						[ \freq_amount, \pwm_amount, \ffreq_amount, nil ],
 					].at(index2).at(index3);
 					~juno6_dicts[index][symbol] = knob.value;
 				}).value_([
 					[ 0, 0.5, 0.5, 0.5, ],
 					[ nil, nil, nil, nil, ],
-					[ 0.5, nil, nil, nil, ],
+					[ 0.5, 0, nil, nil, ],
 					[ 0, 0, 0, nil, ],
 				].at(index2).at(index3));
 			});
@@ -1410,6 +1424,7 @@
 		).visible_(false)
 	})
 });
+~alpha_juno_page_indices = 0!6;
 ~alpha_juno_page_buttons = 6.collect({
 	|index|
 	3.collect({
@@ -1420,6 +1435,7 @@
 				cv.visible = false;
 			});
 			~alpha_juno_comp_views[index][index2].visible_(true);
+			~alpha_juno_page_indices[index] = index2;
 		});
 	})
 });
@@ -1444,11 +1460,14 @@
 		\filter_env_amount, 0.5,
 		\hpf_freq, 0,
 		\lfo_rate, 0.5,
+		\lfo_shape, 0,
 		\pwm_speed, 0.5,
 		\freq_amount, 0,
 		\pwm_amount, 0,
 		\ffreq_amount, 0,
 		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_alpha_juno = {
@@ -1474,6 +1493,7 @@
 	~alpha_juno_page2_knobs[index][0][2].valueAction_(1.0.rand);
 	~alpha_juno_page2_knobs[index][0][3].valueAction_(0.9.rand + 0.1);
 	~alpha_juno_page2_knobs[index][2][0].valueAction_(1.0.rand);
+	~alpha_juno_page2_knobs[index][2][1].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
 	~alpha_juno_page2_knobs[index][2][2].valueAction_(1.0.rand);
 	~alpha_juno_page2_knobs[index][3][0].valueAction_(0);
 	~alpha_juno_page2_knobs[index][3][1].valueAction_(0);
@@ -1496,49 +1516,29 @@
 };
 ~alpha_juno_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~alpha_juno_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~alpha_juno_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~alpha_juno_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~alpha_juno_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~alpha_juno_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~alpha_juno_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~alpha_juno_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~alpha_juno_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~alpha_juno_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~alpha_juno_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~alpha_juno_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~alpha_juno_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~alpha_juno_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~alpha_juno_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~alpha_juno_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~alpha_juno_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~alpha_juno_regen_buttons = 6.collect({
 	|index|
-	StaticText(~alpha_juno_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~alpha_juno_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~alpha_juno_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~alpha_juno_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_alpha_juno.value(index);
 	});
 });
@@ -1586,7 +1586,7 @@
 	[
 		[ "env attack", "env decay", "env sustain", "env release" ],
 		[ "", "", "", "" ],
-		[ "lfo rate", "", "pwm speed", "" ],
+		[ "lfo rate", "lfo shape", "pwm speed", "" ],
 		[ "freq mod", "f. freq mod", "pwm mod", "" ],
 	].do({
 		|list, index2|
@@ -1603,14 +1603,14 @@
 					symbol = [
 						[ \env_attack, \env_decay, \env_sustain, \env_release ],
 						[ nil, nil, nil, nil ],
-						[ \lfo_rate, nil, \pwm_speed, nil ],
+						[ \lfo_rate, \lfo_shape, \pwm_speed, nil ],
 						[ \freq_amount, \ffreq_amount, \pwm_amount, nil ],
 					].at(index2).at(index3);
 					~alpha_juno_dicts[index][symbol] = knob.value;
 				}).value_([
 					[ 0, 0.5, 0.5, 0.5, ],
 					[ nil, nil, nil, nil, ],
-					[ 0.5, nil, 0.5, nil, ],
+					[ 0.5, 0, 0.5, nil, ],
 					[ 0, 0, 0, nil, ],
 				].at(index2).at(index3));
 			});
@@ -1628,6 +1628,7 @@
 		).visible_(false)
 	})
 });
+~megafm_page_indices = 0!6;
 ~megafm_page_buttons = 6.collect({
 	|index|
 	3.collect({
@@ -1638,6 +1639,7 @@
 				cv.visible = false;
 			});
 			~megafm_comp_views[index][index2].visible_(true);
+			~megafm_page_indices[index] = index2;
 		});
 	})
 });
@@ -1668,6 +1670,12 @@
 		\mod_sl, 0.5,
 		\mod_sr, 0.5,
 		\mod_rel, 0.5,
+		\lfo_shape, 0,
+		\lfo_rate, 0.5,
+		\lfo_mod, 0,
+		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_megafm = {
@@ -1714,52 +1722,36 @@
 	~megafm_page2_knobs[index][3][0].valueAction_(0.9.rand + 0.1);
 	~megafm_page2_knobs[index][3][1].valueAction_(0.9.rand + 0.1);
 	~megafm_page2_knobs[index][3][2].valueAction_(0.9.rand + 0.1);
+	~megafm_page2_knobs[index][0][3].valueAction_(1.0.rand);
+	~megafm_page2_knobs[index][1][3].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
+	~megafm_page2_knobs[index][2][3].valueAction_(0.6.rand);
+	~megafm_page2_knobs[index][3][3].valueAction_(1.0.rand);
 };
 ~megafm_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~megafm_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~megafm_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~megafm_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~megafm_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~megafm_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~megafm_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~megafm_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~megafm_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~megafm_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~megafm_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~megafm_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~megafm_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~megafm_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~megafm_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~megafm_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~megafm_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~megafm_regen_buttons = 6.collect({
 	|index|
-	StaticText(~megafm_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~megafm_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~megafm_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~megafm_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_megafm.value(index);
 	});
 });
@@ -1805,10 +1797,10 @@
 	|index|
 	var knobs = nil!4!4;
 	[
-		[ "car attack", "car decay", "", "" ],
-		[ "car sus lvl", "car sus rate", "car release", "" ],
-		[ "mod attack", "mod decay", "", "" ],
-		[ "mod sus lvl", "mod sus rate", "mod release", "" ],
+		[ "car attack", "car decay", "", "lfo rate" ],
+		[ "car sus lvl", "car sus rate", "car release", "lfo shape" ],
+		[ "mod attack", "mod decay", "", "lfo mod" ],
+		[ "mod sus lvl", "mod sus rate", "mod release", "chorus" ],
 	].do({
 		|list, index2|
 		list.do({
@@ -1822,17 +1814,17 @@
 					// todo: set values
 					var symbol;
 					symbol = [
-						[ \car_at, \car_dec, nil, nil ],
-						[ \car_sl, \car_sr, \car_rel, nil ],
-						[ \mod_at, \mod_dec, nil, nil ],
-						[ \mod_sl, \mod_sr, \mod_rel, nil ],
+						[ \car_at, \car_dec, nil, \lfo_rate ],
+						[ \car_sl, \car_sr, \car_rel, \lfo_shape ],
+						[ \mod_at, \mod_dec, nil, \lfo_mod ],
+						[ \mod_sl, \mod_sr, \mod_rel, \chorus ],
 					].at(index2).at(index3);
 					~megafm_dicts[index][symbol] = knob.value;
 				}).value_([
-					[ 0.5, 0.5, nil, nil ],
-					[ 0.5, 0.5, 0.5, nil ],
-					[ 0.5, 0.5, nil, nil ],
-					[ 0.5, 0.5, 0.5, nil ],
+					[ 0.5, 0.5, nil, 0.5 ],
+					[ 0.5, 0.5, 0.5, 0 ],
+					[ 0.5, 0.5, nil, 0 ],
+					[ 0.5, 0.5, 0.5, 0 ],
 				].at(index2).at(index3));
 			});
 		});
@@ -1849,6 +1841,7 @@
 		).visible_(false)
 	})
 });
+~modal_page_indices = 0!6;
 ~modal_page_buttons = 6.collect({
 	|index|
 	2.collect({
@@ -1859,6 +1852,7 @@
 				cv.visible = false;
 			});
 			~modal_comp_views[index][index2].visible_(true);
+			~modal_page_indices[index] = index2;
 		});
 	})
 });
@@ -1876,6 +1870,12 @@
 		\attack, 0.5,
 		\release, 0.5,
 		\resonance, 0.5,
+		\lfo_rate, 0.5,
+		\lfo_shape, 0,
+		\lfo_mod, 0,
+		\chorus, 0,
+		\macro1, 1,
+		\macro2, 1,
 	]);
 });
 ~randomize_modal = {
@@ -1891,52 +1891,36 @@
 	~modal_page1_knobs[index][2][2].valueAction_(0.6.rand + 0.15);
 	~modal_page1_knobs[index][2][3].valueAction_(0.6.rand + 0.15);
 	~modal_page1_knobs[index][3][0].valueAction_(0.7.rand + 0.1);
+	~modal_page1_knobs[index][3][1].valueAction_(1.0.rand);
+	~modal_page1_knobs[index][3][2].valueAction_([0, 1.0.rand].wchoose([0.6, 0.4]));
+	~modal_page1_knobs[index][3][3].valueAction_(0.5.rand);
+	~modal_page1_knobs[index][1][3].valueAction_(1.0.rand);
 };
 ~modal_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~modal_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~modal_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~modal_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~modal_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
+		~modal_dicts[index][\macro1] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~modal_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~modal_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~modal_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~modal_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~modal_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~modal_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~modal_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
-		// todo: set values
-	});
-});
-~modal_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~modal_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~modal_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+		~modal_dicts[index][\macro2] = knob.value.linexp(0, 1, 0.1, 10);
+	}).keystep_(0.05);
 });
 ~modal_regen_buttons = 6.collect({
 	|index|
-	StaticText(~modal_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~modal_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~modal_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~modal_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		~randomize_modal.value(index);
 	});
 });
@@ -1945,9 +1929,9 @@
 	var knobs = nil!4!4;
 	[
 		[ "warp 1", "warp 2", "", "tilt" ],
-		[ "shape 1", "shape 2", "shape depth", "" ],
+		[ "shape 1", "shape 2", "shape depth", "chorus" ],
 		[ "imp. bal.", "filter", "attack", "release" ],
-		[ "resonance", "", "", "" ],
+		[ "resonance", "lfo rate", "lfo shape", "lfo mod" ],
 	].do({
 		|list, index2|
 		list.do({
@@ -1962,16 +1946,16 @@
 					var symbol;
 					symbol = [
 						[ \warp1, \warp2, nil, \tilt ],
-						[ \shape1, \shape2, \shape_depth, nil ],
+						[ \shape1, \shape2, \shape_depth, \chorus ],
 						[ \impulse_balance, \ffilter, \attack, \release ],
-						[ \resonance, nil, nil, nil ],
+						[ \resonance, \lfo_rate, \lfo_shape, \lfo_mod ],
 					].at(index2).at(index3);
 					~modal_dicts[index][symbol] = knob.value;
 				}).value_([
 					[ 0.5, 0.5, nil, 0.5, ],
-					[ 0, 0, 0, nil, ],
+					[ 0, 0, 0, 0, ],
 					[ 0, 0.5, 0.5, 0.5, ],
-					[ 0.5, nil, nil, nil, ],
+					[ 0.5, 0.5, 0, 0, ],
 				].at(index2).at(index3));
 			});
 		});
@@ -1988,6 +1972,7 @@
 		).visible_(false)
 	})
 });
+~sampler_page_indices = 0!6;
 ~sampler_page_buttons = 6.collect({
 	|index|
 	2.collect({
@@ -1998,54 +1983,35 @@
 				cv.visible = false;
 			});
 			~sampler_comp_views[index][index2].visible_(true);
+			~sampler_page_indices[index] = index;
 		});
 	})
 });
 ~sampler_macro_knobs1 = 6.collect({
 	|index|
-	StaticText(~sampler_comp_views[index][0], Rect(10, 95, 60, 20) )
+	StaticText(~sampler_comp_views[index][0], Rect(70, 95, 60, 20) )
 	.string_("macro 1").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sampler_comp_views[index][0], Rect(10, 45, 60, 50) ).mode_(\vert)
+	Knob.new(~sampler_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
 		// todo: set values
-	});
+	}).keystep_(0.05);
 });
 ~sampler_macro_knobs2 = 6.collect({
 	|index|
-	StaticText(~sampler_comp_views[index][0], Rect(70, 95, 60, 20) )
-	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sampler_comp_views[index][0], Rect(70, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
-});
-~sampler_macro_knobs3 = 6.collect({
-	|index|
 	StaticText(~sampler_comp_views[index][0], Rect(130, 95, 60, 20) )
-	.string_("macro 3").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sampler_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert)
+	.string_("macro 2").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
+	Knob.new(~sampler_comp_views[index][0], Rect(130, 45, 60, 50) ).mode_(\vert).value_(0.5)
 	.action_({
 		|knob|
 		// todo: set values
-	});
-});
-~sampler_macro_knobs4 = 6.collect({
-	|index|
-	StaticText(~sampler_comp_views[index][0], Rect(190, 95, 60, 20) )
-	.string_("macro 4").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Knob.new(~sampler_comp_views[index][0], Rect(190, 45, 60, 50) ).mode_(\vert)
-	.action_({
-		|knob|
-		// todo: set values
-	});
+	}).keystep_(0.05);
 });
 ~sampler_regen_buttons = 6.collect({
 	|index|
-	StaticText(~sampler_comp_views[index][0], Rect(250, 95, 60, 20) )
+	StaticText(~sampler_comp_views[index][0], Rect(190, 95, 60, 20) )
 	.string_("regen").stringColor_(Color.white).align_(\center).font_( Font("Monaco", 10) );
-	Button(~sampler_comp_views[index][0], Rect(255, 45, 50, 50) ).action_({
+	Button(~sampler_comp_views[index][0], Rect(195, 45, 50, 50) ).action_({
 		// todo: generate a new patch for the synth
 	});
 });
@@ -2116,7 +2082,7 @@
 	3.collect({
 		|index2|
 		Knob.new(~sample_comp_views[index], Rect(28 + (18*index2), 30, 15, 15))
-		.mode_(\vert).value_([1, 0.5, 0].at(index2));
+		.mode_(\vert).value_([1, 0.5, 0].at(index2)).keystep_(1/15);
 	});
 });
 
@@ -2331,7 +2297,7 @@
 	3.collect({
 		|index2|
 		Knob.new(~sample_comp_views[index], Rect(305, 55 + (index2*20), 15, 15))
-		.value_( [1, 0, 0.5].at(index2) ).visible_(true).mode_(\vert);
+		.value_( [1, 0, 0.5].at(index2) ).visible_(true).mode_(\vert).keystep_(0.05);
 	});
 });
 
@@ -2383,7 +2349,7 @@
 	3.collect({
 		|index2|
 		Knob.new(~sample_comp_views[index], Rect(305, 55 + (index2*20), 15, 15))
-		.value_( [1, 0, 0.5].at(index2) ).visible_(false).mode_(\vert);
+		.value_( [1, 0, 0.5].at(index2) ).visible_(false).mode_(\vert).keystep_(0.05);
 	});
 });
 
@@ -2443,7 +2409,7 @@
 	3.collect({
 		|index2|
 		Knob.new(~sample_comp_views[index], Rect(305, 55 + (index2*20), 15, 15))
-		.value_( [0, 0, 0.5].at(index2) ).visible_(false).mode_(\vert);
+		.value_( [0, 0, 0.5].at(index2) ).visible_(false).mode_(\vert).keystep_(0.05);
 	});
 });
 
@@ -2551,5 +2517,12 @@
 	~sequencer_type_comp_views[index][0].visible = true;
 	~synth_type_buttons[index][0].valueAction = 1;
 	~anushri_page_buttons[index][0].valueAction = 1;
+	~sh101_page_buttons[index][0].valueAction = 1;
+	~buchla_page_buttons[index][0].valueAction = 1;
+	~juno6_page_buttons[index][0].valueAction = 1;
+	~alpha_juno_page_buttons[index][0].valueAction = 1;
+	~megafm_page_buttons[index][0].valueAction = 1;
+	~modal_page_buttons[index][0].valueAction = 1;
+	~sampler_page_buttons[index][0].valueAction = 1;
 });
 ~sample_buttons[0].valueAction = 1;

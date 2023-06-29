@@ -1,5 +1,6 @@
+~count = 0;
 r = Task({
-	var delta, count = 0, notes;
+	var delta, notes;
 	while {
 		delta = 15/~bpm*(~swing*2);
 		delta.notNil;
@@ -40,8 +41,8 @@ r = Task({
 		});
 		~global_sample_index = (~global_sample_index+1).mod(16);
 
-		delta = 15/~bpm*( [~swing, 1-~swing].at(count) *2);
-		count = 1-count;
+		delta = 15/~bpm*( [~swing, 1-~swing].at(~count) *2);
+		~count = 1-~count;
 		delta.yield;
 	}
 });

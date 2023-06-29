@@ -148,8 +148,35 @@ SynthDef.new(\mixer, {
 	Out.ar(0, sig);
 }).add;
 
+SynthDef(\lfos, {
+	arg out1, out2, out3, out4, out5, out6,
+	r1, r2, r3, r4, r5, r6,
+	sh1, sh2, sh3, sh4, sh5, sh6;
+	var outs, lfos;
+
+	outs = [out1, out2, out3, out4, out5, out6];
+
+	lfos = 6.collect({
+		|index|
+		var lfo_shape, lfo_rate;
+		lfo_shape = [sh1, sh2, sh3, sh4, sh5, sh6].at(index);
+		lfo_rate = [r1, r2, r3, r4, r5, r6].at(index);
+		Select.kr(lfo_shape, [ // tri, pulse, ramp down, ramp up
+			VarSaw.kr(lfo_rate, 0, 0.5),
+			Pulse.kr(lfo_rate),
+			VarSaw.kr(lfo_rate, 0, 0),
+			VarSaw.kr(lfo_rate, 0, 1),
+		]);
+	});
+
+	lfos.do({
+		|lfo, index|
+		Out.kr(outs[index], lfo);
+	});
+}).add;
+
 SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going to high, make it analog like i.e. molly the polly, lag all audio controls
-	arg freq = 110, gate = 0, kill_gate = 1, out = 0,
+	arg in_bus, freq = 110, gate = 0, kill_gate = 1, out = 0, macro1 = 1, macro2 = 1,
 	portamento = 0, fm_on = 0, fm_index = 0, // freq params
 	sync_on = 0, sync = 0, pw = 0.5, sub_oct = -1,
 	vco_balance = 0.5, vco_pitch = 0, sub_amp = 0, // osc params
@@ -157,9 +184,21 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 	fuzz_on = 0, fuzz_drive = 1, fuzz_offset = 0.4, master_volume = 1, // shaping params
 	vcf_attack = 0.0005, vcf_decay = 1, vcf_sustain = 0, vcf_release = 1, // filter env
 	vca_attack = 0.0005, vca_decay = 1, vca_sustain = 0, vca_release = 1, // vca env
-	mod_attack = 0.0005, mod_decay = 1, lfo_rate = 1, lfo_shape = 0, mod_balance = 0.5, // mod params
+	mod_attack = 0.0005, mod_decay = 1, mod_balance = 0.5, // mod params
 	pwm_amount = 0, sync_amount = 0, freq_amount = 0, ffreq_amount = 0; // mod destinations
 	var sig, mod, sub_freq, saw, pulse, sub, vca_env, vcf_env, mod_env, kill_env, lfo, mainOscDriftLfo, subOscDriftLfo;
+
+	// macros
+	filter_freq = filter_freq * macro1;
+	filter_env_amount = filter_env_amount * macro1;
+	vcf_decay = vcf_decay * macro2;
+	vca_decay = vca_decay * macro2;
+	mod_decay = mod_decay * macro2;
+	vcf_release = vcf_release * macro2;
+	vca_release = vca_release * macro2;
+	vcf_attack = vcf_attack / macro2;
+	vca_attack = vca_attack / macro2;
+	mod_attack = mod_attack / macro2;
 
 	// lag inputs
 	fm_index = Lag.kr(fm_index, 0.005);
@@ -216,12 +255,7 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 	);
 	kill_env = EnvGen.ar(Env.asr(0, 1, 0.005), kill_gate, doneAction: 2);
 	kill_env = kill_env * EnvGen.ar(Env.linen(0, 5, 0.005), kill_gate, doneAction: 2); // kill after 5 secs
-	lfo = Select.kr(lfo_shape, [ // tri, pulse, ramp down, ramp up
-		VarSaw.kr(lfo_rate, 0, 0.5),
-		Pulse.kr(lfo_rate),
-		VarSaw.kr(lfo_rate, 0, 0),
-		VarSaw.kr(lfo_rate, 0, 1),
-	]);
+	lfo = In.kr(in_bus, 1);
 	mod = SelectX.kr(mod_balance, [mod_env, lfo]);
 
 	// audio processing
@@ -243,8 +277,8 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 	sig = SelectX.ar(vco_balance, [saw, pulse]);
 	sig = SelectX.ar(sub_amp*0.5, [sig, sub]);
 	// filtering
-	filter_freq = filter_freq * LinExp.ar((filter_env_amount * vcf_env) + (ffreq_amount * mod), 0, 1, 1, 2);
-	sig = RLPFD.ar(sig, filter_freq.clip(20, 20000), filter_res, 0, 3.5);
+	filter_freq = filter_freq * LinExp.ar((filter_env_amount * vcf_env) + (ffreq_amount * mod), -1, 1, 0.5, 2);
+	sig = RLPFD.ar(sig, filter_freq.clip(20, 15000), filter_res*0.5, 0, 3.5);
 	sig = Select.ar(fuzz_on, [
 		sig * vca_env, ( (sig + fuzz_offset) * (fuzz_drive+1) * vca_env).tanh
 	]);
@@ -254,13 +288,12 @@ SynthDef(\anushri, { // todos: check FM signal, clip frequency values from going
 }).add;
 
 SynthDef(\sh101, {// todos: clip frequency values from going to high, make it analog like i.e. molly the polly, lag all audio controls
-	arg freq = 110, gate = 0, kill_gate = 1, portamento = 0, out = 0, // freq params
+	arg in_bus, freq = 110, gate = 0, kill_gate = 1, portamento = 0, out = 0, macro1 = 1, macro2 = 1, // freq params
 	pw = 0.5, sub_oct = -1,
 	vco_balance = 0.5, vco_pitch = 0, sub_amp = 0, noise_amp = 0,// osc params
 	filter_freq = 110, filter_res = 0, filter_env_amount = 1, // filter params
 	master_volume = 1, // shaping params
 	env_attack = 0.0005, env_decay = 1, env_sustain = 0, env_release = 1, // env
-	lfo_rate = 1, // mod params
 	pwm_amount = 0, freq_amount = 0, ffreq_amount = 0; // mod destinations
 	var sig, mod, sub_freq, saw, pulse, sub, env, kill_env, mainOscDriftLfo, subOscDriftLfo;
 
@@ -275,6 +308,13 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 		mul: 0.0008,
 		add: 1
 	);
+
+	// macros
+	filter_freq = filter_freq * macro1;
+	filter_env_amount = filter_env_amount * macro1;
+	env_decay = env_decay * macro2;
+	env_release = env_release * macro2;
+	env_attack = env_attack / macro2;
 
 	// lag inputs
 	pw = Lag.kr(pw, 0.005);
@@ -301,7 +341,7 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 	);
 	kill_env = EnvGen.ar(Env.asr(0, 1, 0.005), kill_gate, doneAction: 2);
 	kill_env = kill_env * EnvGen.ar(Env.linen(0, 5, 0.005), kill_gate, doneAction: 2); // kill after 5 secs
-	mod = VarSaw.kr(lfo_rate, 0, 0.5);
+	mod = In.kr(in_bus, 1);
 
 	// audio processing
 	freq = Lag.kr(freq, 0.005 + portamento);
@@ -321,7 +361,7 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 	sig = SelectX.ar(sub_amp*0.5, [sig, sub]);
 	sig = SelectX.ar(noise_amp*0.5, [sig, WhiteNoise.ar()]);
 	// filtering
-	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), 0, 1, 1, 2);
+	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), -1, 1, 0.5, 2);
 	sig = RLPF.ar(sig, filter_freq.clip(20, 20000), filter_res.linexp(0, 1, 1, 0.05));
 	sig = sig * env * master_volume * kill_env;
 	// output
@@ -329,15 +369,21 @@ SynthDef(\sh101, {// todos: clip frequency values from going to high, make it an
 }).add;
 
 SynthDef(\juno6, {// todos: clip frequency values from going to high, make it analog like i.e. molly the polly, lag all audio controls, write a chorus
-	arg freq = 110, gate = 0, kill_gate = 1, out = 0, // freq params
+	arg in_bus, freq = 110, gate = 0, kill_gate = 1, out = 0, macro1 = 1, macro2 = 1, // freq params
 	pw = 0.5, sub_oct = -1,
 	vco_balance = 0.5, vco_pitch = 0, sub_amp = 0, noise_amp = 0,// osc params
 	hpf_freq = 20, filter_freq = 110, filter_res = 0, filter_env_amount = 1, // filter params
 	master_volume = 1, chorus = 0, // shaping params
 	env_attack = 0.0005, env_decay = 1, env_sustain = 0, env_release = 1, // env
-	lfo_rate = 1, // mod params
 	pwm_amount = 0, freq_amount = 0, ffreq_amount = 0; // mod destinations
 	var sig, mod, sub_freq, saw, pulse, sub, env, kill_env, mainOscDriftLfo, subOscDriftLfo;
+
+	// macros
+	filter_freq = filter_freq * macro1;
+	filter_env_amount = filter_env_amount * macro1;
+	env_decay = env_decay * macro2;
+	env_release = env_release * macro2;
+	env_attack = env_attack / macro2;
 
 	// lag inputs
 	pw = Lag.kr(pw, 0.005);
@@ -377,7 +423,7 @@ SynthDef(\juno6, {// todos: clip frequency values from going to high, make it an
 	);
 	kill_env = EnvGen.ar(Env.asr(0, 1, 0.005), kill_gate, doneAction: 2);
 	kill_env = kill_env * EnvGen.ar(Env.linen(0, 5, 0.005), kill_gate, doneAction: 2); // kill after 5 secs
-	mod = VarSaw.kr(lfo_rate, 0, 0.5);
+	mod = In.kr(in_bus, 1);
 
 	// audio processing
 	freq = Lag.kr(freq, 0.005);
@@ -397,7 +443,7 @@ SynthDef(\juno6, {// todos: clip frequency values from going to high, make it an
 	sig = SelectX.ar(sub_amp*0.5, [sig, sub]);
 	sig = SelectX.ar(noise_amp*0.5, [sig, WhiteNoise.ar()]);
 	// filtering
-	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), 0, 1, 1, 2);
+	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), -1, 1, 0.5, 2);
 	sig = HPF.ar(sig, hpf_freq);
 	sig = RLPF.ar(sig, filter_freq.clip(20, 20000), filter_res.linexp(0, 1, 1, 0.05));
 	sig = sig * env * master_volume * kill_env;
@@ -406,7 +452,7 @@ SynthDef(\juno6, {// todos: clip frequency values from going to high, make it an
 }).add;
 
 SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make it analog like i.e. molly the polly, lag all audio controls, write a chorus
-	arg freq = 110, gate = 0, kill_gate = 1, out = 0, // freq params
+	arg in_bus, freq = 110, gate = 0, kill_gate = 1, out = 0, macro1 = 1, macro2 = 1, // freq params
 	sub_oct = 0, dco_pitch = 0, // 0, -1 or -2
 	saw_wave = 0, pulse_wave = 0, sub_wave = 0, // alpha juno waveshapes
 	pw = 0.5, pwm_amount = 0.45, pwm_speed = 0.5, // pw seperated
@@ -414,11 +460,17 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 	hpf_freq = 20, filter_freq = 110, filter_res = 0, filter_env_amount = 1, // filter params
 	master_volume = 1, chorus = 0, // shaping params
 	env_attack = 0.0005, env_decay = 1, env_sustain = 0, env_release = 1, // env
-	lfo_rate = 1, // mod params
 	freq_amount = 0, ffreq_amount = 0; // mod destinations
 	// mixing
 	var saw, pulse, sub, lfo, sig, env, kill_env, mod,
 	mod_pulse1, mod_pulse2, mod_pulse3, mod_pulse4, mod_pulse5, mod_pulse6, mainOscDriftLfo, subOscDriftLfo;
+
+	// macros
+	filter_freq = filter_freq * macro1;
+	filter_env_amount = filter_env_amount * macro1;
+	env_decay = env_decay * macro2;
+	env_release = env_release * macro2;
+	env_attack = env_attack / macro2;
 
 	// lag inputs
 	pw = Lag.kr(pw, 0.005);
@@ -458,7 +510,7 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 	);
 	kill_env = EnvGen.ar(Env.asr(0, 1, 0.005), kill_gate, doneAction: 2);
 	kill_env = kill_env * EnvGen.ar(Env.linen(0, 5, 0.005), kill_gate, doneAction: 2); // kill after 5 secs
-	mod = VarSaw.kr(lfo_rate, 0, 0.5);
+	mod = In.kr(in_bus, 1);
 
 	lfo = VarSaw.kr(pwm_speed, 0, 0.5, pwm_amount, pw);
 
@@ -500,7 +552,7 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 	sig = SelectX.ar(noise_amp*0.5, [sig, WhiteNoise.ar()]);
 	sig = LeakDC.ar(sig);
 	// filtering
-	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), 0, 1, 1, 2);
+	filter_freq = filter_freq * LinExp.ar((filter_env_amount * env) + (ffreq_amount * mod), -1, 1, 0.5, 2);
 	sig = HPF.ar(sig, hpf_freq);
 	sig = RLPF.ar(sig, filter_freq.clip(20, 20000), filter_res.linexp(0, 1, 1, 0.005));
 	sig = sig * env * master_volume * kill_env;
@@ -509,13 +561,21 @@ SynthDef(\alphajuno, {// todos: clip frequency values from going to high, make i
 }).add;
 
 SynthDef(\buchla, {// todos: clip frequency values from going to high, make it analog like i.e. molly the polly, lag all audio controls, write a chorus
-	arg freq = 110, gate = 0, kill_gate = 1, portamento = 0, out = 0, // freq params
+	arg in_bus, freq = 110, gate = 0, kill_gate = 1, portamento = 0, out = 0, macro1 = 1, macro2 = 1, // freq params
 	mod_rat = 1, car_rat = 1, fm_index = 0, fb = 0, bend = 0, // FM params
 	attack = 1, decay = 1,
 	env_fold = 0, env_mod = 0,
 	f_env_min = 300, f_env_max = 10000,
+	lfo_bend = 0, lfo_mod = 0, lfo_fold = 0,
 	clip = 0, folds = 0, master_volume = 1; // shaping params;
-	var sig, mod, phase, lpg_env, amp_env, kill_env, carDriftLfo, modDriftLfo;
+	var sig, mod, phase, lpg_env, amp_env, kill_env, carDriftLfo, modDriftLfo, lfo;
+
+	// macros
+	f_env_max = f_env_max * macro1;
+	fm_index = fm_index * macro1;
+	clip = clip * macro1;
+	decay = decay * macro2;
+	attack = attack / macro2;
 
 	// lag inputs
 	mod_rat = Lag.kr(mod_rat, 0.005);
@@ -542,17 +602,20 @@ SynthDef(\buchla, {// todos: clip frequency values from going to high, make it a
 		add: 1
 	);
 
+	lfo = In.kr(in_bus, 1);
+	bend = bend * (1 + (lfo * lfo_bend));
+
 	lpg_env = EnvGen.ar(Env.new([0, 1, 0], [attack, decay], [4, -20]), gate, doneAction: 0);
 	amp_env = EnvGen.ar(Env.new([0, 1, 0], [attack, decay], [4, -10]), gate, doneAction: 2);
 	kill_env = EnvGen.ar(Env.asr(0, 1, 0.005), kill_gate, doneAction: 2);
 
-	mod = SinOscFB.ar(freq*mod_rat*modDriftLfo, fb*0.5pi, fm_index + (lpg_env * env_mod));
+	mod = SinOscFB.ar(freq*mod_rat*modDriftLfo, fb*0.5pi, fm_index + (lpg_env * env_mod) + (lfo * lfo_mod));
 	phase = LFSaw.ar(freq*car_rat*carDriftLfo);
 	phase = phase.pow(10.pow(bend)) + mod;
 	sig = SinOsc.ar(0, phase.linlin(-1, 1, 0, 2pi), 0.5);
 
 	// folding
-	folds = folds + (env_fold * lpg_env);
+	folds = folds + (env_fold * lpg_env) + (lfo * lfo_fold);
 	sig = Fold.ar(sig * (1 + (folds * 2)), -0.5, 0.5);
 	sig = LPF.ar(sig, 12000); // Hack away some aliasing
 
@@ -601,10 +664,15 @@ SynthDef(\buchla, {// todos: clip frequency values from going to high, make it a
 	[freqs, amps, times];
 };
 SynthDef(\modal, { // modal, make a synthdef
-	arg freq = 110, kill_gate = 1, out = 0,
-	attack = 0.1, release = 3, impulse_balance = 1,
+	arg in_bus, freq = 110, kill_gate = 1, out = 0, macro1 = 1, macro2 = 1,
+	attack = 0.1, release = 3, impulse_balance = 1, lfo_mod = 0,
 	ffilter = 0, resonance = 3, master_volume = 1;
-	var sig, kill_env;
+	var sig, kill_env, mod;
+
+	// macros
+	resonance = resonance * macro2;
+	release = release * macro2;
+	attack = attack / macro2;
 
 	// lag inputs
 	impulse_balance = Lag.kr(impulse_balance, 0.005);
@@ -612,6 +680,8 @@ SynthDef(\modal, { // modal, make a synthdef
 	resonance = Lag.kr(resonance, 0.005);
 
 	kill_env = EnvGen.ar(Env.linen(0, 5, 0.005), kill_gate, doneAction: 2); // kill after 5 secs
+
+	mod = In.kr(in_bus, 1);
 
 	sig = SelectX.ar(impulse_balance, [
 		Impulse.ar(0, 0, 0.5),
@@ -627,7 +697,7 @@ SynthDef(\modal, { // modal, make a synthdef
 			\freqs.ir((1..20)*100),
 			\amps.ir((1..20).reciprocal),
 			\times.ir((1..20).reciprocal),
-	], sig, decayscale: resonance);
+	], sig, decayscale: resonance * (1 + (mod * lfo_mod) * macro1));
 	sig = (sig * EnvGen.ar(Env.perc(0.0001, 5), doneAction: 2) * master_volume).tanh;
 	sig = sig * kill_env;
 	// output
@@ -635,15 +705,26 @@ SynthDef(\modal, { // modal, make a synthdef
 }).add;
 
 SynthDef(\megafm, {
-	arg freq = 110, gate = 1, kill_gate = 1, fb = 0, algorithm = 0, out = 0,
+	arg in_bus, freq = 110, gate = 1, kill_gate = 1, fb = 0, algorithm = 0, out = 0,
+	macro1 = 1, macro2 = 1, lfo_mod = 0,
 	car_at = 1, car_dec = 0.5, car_sl = 0.5, car_sr = 2, car_rel = 1,
 	mod_at = 1, mod_dec = 1.5, mod_sl = 0.75, mod_sr = 1, mod_rel = 1,
 	op1_lvl = 1, op2_lvl = 1, op3_lvl = 1, op4_lvl = 1,
 	op1_rat = 1, op2_rat = 1, op3_rat = 1, op4_rat = 1,
 	op1_det = 0, op2_det = 0, op3_det = 0, op4_det = 0;
-	var sig, kill_env, op_amps, op_envs, op_freqs, op2_pm, op3_pm, op4_pm, bitdepth = 8,
+	var sig, kill_env, lfo, op_amps, op_envs, op_freqs, op2_pm, op3_pm, op4_pm, bitdepth = 8,
 	op_ratios, op_detunes, op1, op2, op3, op4, mod_env, car_env, carDriftLfo, modDriftLfo,
 	op1toout, op1to2, op1to3, op1to4, op2toout, op2to3, op2to4, op3toout, op3to4, op4toout;
+
+	// macros
+	car_dec = car_dec * macro2;
+	car_sr = car_sr * macro2;
+	car_rel = car_rel * macro2;
+	car_at = car_at / macro2;
+	mod_dec = mod_dec * macro2;
+	mod_sr = mod_sr * macro2;
+	mod_rel = mod_rel * macro2;
+	mod_at = mod_at / macro2;
 
 	op1toout = Select.kr(algorithm, [0, 0, 0, 0, 0, 0, 0, 1]);
 	op2toout = Select.kr(algorithm, [0, 0, 0, 0, 1, 1, 1, 1]);
@@ -685,9 +766,11 @@ SynthDef(\megafm, {
 		add: 1
 	);
 
+	lfo = In.kr(in_bus, 1);
+
 	mod_env = EnvGen.ar(
 		Env( [0, 1, mod_sl, mod_sl/2, 0], [mod_at, mod_dec, mod_sr, mod_rel], 'lin', 3, 2 )
-		, gate);
+		, gate) * macro1 * (1 + (lfo * lfo_mod));
 	car_env = EnvGen.ar(
 		Env( [0, 1, car_sl, car_sl/2, 0], [car_at, car_dec, car_sr, car_rel], 'lin', 3, 2 )
 		, gate, doneAction: 2);
@@ -792,6 +875,9 @@ SynthDef(\megafm, {
 						~anushri[track_index].set(\kill_gate, 0);
 					});
 					~anushri[track_index] = Synth.new(\anushri, [
+						\in_bus, ~lfo_busses[track_index],
+						\macro1, ~anushri_dicts[track_index][\macro1],
+						\macro2, ~anushri_dicts[track_index][\macro2],
 						\freq, note_nr.midicps,
 						\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 						\gate, 1,
@@ -810,7 +896,7 @@ SynthDef(\megafm, {
 						\vca_decay, ~anushri_dicts[track_index][\vca_decay].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 						\vca_sustain, ~anushri_dicts[track_index][\vca_sustain],
 						\vca_release, ~anushri_dicts[track_index][\vca_release].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
-						\filter_freq, ~anushri_dicts[track_index][\filter_freq].linexp(0, 1, 20, 20000),
+						\filter_freq, ~anushri_dicts[track_index][\filter_freq].linexp(0, 1, 20, 10000),
 						\filter_res, ~anushri_dicts[track_index][\filter_res],
 						\filter_env_amount, ~anushri_dicts[track_index][\filter_env_amount]*5,
 						\fuzz_on, (~anushri_dicts[track_index][\fuzz_on]*1.999).floor,
@@ -821,14 +907,24 @@ SynthDef(\megafm, {
 						\vcf_release, ~anushri_dicts[track_index][\vcf_release].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 						\mod_attack, ~anushri_dicts[track_index][\mod_attack].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 						\mod_decay, ~anushri_dicts[track_index][\mod_decay].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
-						\lfo_rate, ~anushri_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
-						\lfo_shape, (~anushri_dicts[track_index][\lfo_shape]*3.999).floor,
+						//\lfo_rate, ~anushri_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+						//\lfo_shape, (~anushri_dicts[track_index][\lfo_shape]*3.999).floor,
 						\mod_balance, ~anushri_dicts[track_index][\mod_balance],
 						\freq_amount, ~anushri_dicts[track_index][\freq_amount],
 						\pwm_amount, ~anushri_dicts[track_index][\pwm_amount],
 						\sync_amount, ~anushri_dicts[track_index][\sync_amount],
 						\ffreq_amount, ~anushri_dicts[track_index][\ffreq_amount]
 					], ~synth_group);
+					~lfos.set(
+						[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+						~anushri_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+						[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+						(~anushri_dicts[track_index][\lfo_shape]*3.999).floor,
+					);
+					~mixer.set(
+						[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+						~anushri_dicts[track_index][\chorus],
+					);
 				});
 				~anushri_current_count[track_index] = (~anushri_current_count[track_index]+1).mod(10);
 				this_count = ~anushri_current_count[track_index].asInteger;
@@ -839,7 +935,7 @@ SynthDef(\megafm, {
 						~anushri[track_index].set(\gate, 0);
 						~anushri_active[track_index] = false;
 					});
-				}.defer(15/~bpm*length-0.02);
+				}.defer(  (15/~bpm * (length - 1 + ( [~swing, 1-~swing].at(~count) *2) ) - 0.02).clip(0.01, 100)  );
 			},
 			1, {
 				var this_count;
@@ -851,6 +947,9 @@ SynthDef(\megafm, {
 						~sh101[track_index].set(\kill_gate, 0);
 					});
 					~sh101[track_index] = Synth.new(\sh101, [
+						\in_bus, ~lfo_busses[track_index],
+						\macro1, ~sh101_dicts[track_index][\macro1],
+						\macro2, ~sh101_dicts[track_index][\macro2],
 						\freq, note_nr.midicps,
 						\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 						\gate, 1,
@@ -866,14 +965,24 @@ SynthDef(\megafm, {
 						\env_decay, ~sh101_dicts[track_index][\env_decay].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 						\env_sustain, ~sh101_dicts[track_index][\env_sustain],
 						\env_release, ~sh101_dicts[track_index][\env_release].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
-						\filter_freq, ~sh101_dicts[track_index][\filter_freq].linexp(0, 1, 20, 20000),
+						\filter_freq, ~sh101_dicts[track_index][\filter_freq].linexp(0, 1, 20, 10000),
 						\filter_res, ~sh101_dicts[track_index][\filter_res],
 						\filter_env_amount, ~sh101_dicts[track_index][\filter_env_amount]*5,
-						\lfo_rate, ~sh101_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+						//\lfo_rate, ~sh101_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
 						\freq_amount, ~sh101_dicts[track_index][\freq_amount],
 						\pwm_amount, ~sh101_dicts[track_index][\pwm_amount],
 						\ffreq_amount, ~sh101_dicts[track_index][\ffreq_amount],
 					], ~synth_group);
+					~lfos.set(
+						[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+						~sh101_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+						[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+						(~sh101_dicts[track_index][\lfo_shape]*3.999).floor,
+					);
+					~mixer.set(
+						[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+						~sh101_dicts[track_index][\chorus],
+					);
 				});
 				~sh101_current_count[track_index] = (~sh101_current_count[track_index]+1).mod(10);
 				this_count = ~sh101_current_count[track_index].asInteger;
@@ -883,7 +992,7 @@ SynthDef(\megafm, {
 						~sh101[track_index].set(\gate, 0);
 						~sh101_active[track_index] = false;
 					});
-				}.defer(15/~bpm*length-0.02);
+				}.defer(  (15/~bpm * (length - 1 + ( [~swing, 1-~swing].at(~count) *2) ) - 0.02).clip(0.01, 100)  );
 			},
 			2, {
 				var this_count;
@@ -895,6 +1004,9 @@ SynthDef(\megafm, {
 						~buchla[track_index].set(\kill_gate, 0);
 					});
 					~buchla[track_index] = Synth.new(\buchla,[
+						\in_bus, ~lfo_busses[track_index],
+						\macro1, ~buchla_dicts[track_index][\macro1],
+						\macro2, ~buchla_dicts[track_index][\macro2],
 						\freq, note_nr.midicps,
 						\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 						\gate, 1,
@@ -910,10 +1022,23 @@ SynthDef(\megafm, {
 						\decay, ~buchla_dicts[track_index][\decay].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 						\f_env_min, ~buchla_dicts[track_index][\f_env_min].linexp(0, 1, 20, 1000),
 						\f_env_max, ~buchla_dicts[track_index][\f_env_max].linexp(0, 1, 200, 10000),
+						\lfo_mod, ~buchla_dicts[track_index][\lfo_mod],
+						\lfo_fold, ~buchla_dicts[track_index][\lfo_fold],
+						\lfo_bend, ~buchla_dicts[track_index][\lfo_bend],
 						\folds, ~buchla_dicts[track_index][\folds]*5,
 						\env_fold, ~buchla_dicts[track_index][\env_fold]*5,
 						\clip, ~buchla_dicts[track_index][\clip]*5,
 					], ~synth_group);
+					~lfos.set(
+						[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+						~buchla_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+						[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+						(~buchla_dicts[track_index][\lfo_shape]*3.999).floor,
+					);
+					~mixer.set(
+						[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+						~buchla_dicts[track_index][\chorus],
+					);
 				});
 				~buchla_current_count[track_index] = (~buchla_current_count[track_index]+1).mod(10);
 				this_count = ~buchla_current_count[track_index].asInteger;
@@ -923,12 +1048,15 @@ SynthDef(\megafm, {
 						~buchla[track_index].set(\gate, 0);
 						~buchla_active[track_index] = false;
 					});
-				}.defer(15/~bpm*length-0.02);
+				}.defer(  (15/~bpm * (length - 1 + ( [~swing, 1-~swing].at(~count) *2) ) - 0.02).clip(0.01, 100)  );
 			},
 			3, {
 				// juno6
 				if(~juno6_voices[track_index][note_nr]!=nil,{~juno6_voices[track_index][note_nr].set(\kill_gate, 0);});
 				~juno6_voices[track_index][note_nr] = Synth.new(\juno6, [
+					\in_bus, ~lfo_busses[track_index],
+					\macro1, ~juno6_dicts[track_index][\macro1],
+					\macro2, ~juno6_dicts[track_index][\macro2],
 					\freq, note_nr.midicps,
 					\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 					\gate, 1,
@@ -943,26 +1071,39 @@ SynthDef(\megafm, {
 					\env_decay, ~juno6_dicts[track_index][\env_decay].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 					\env_sustain, ~juno6_dicts[track_index][\env_sustain],
 					\env_release, ~juno6_dicts[track_index][\env_release].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
-					\filter_freq, ~juno6_dicts[track_index][\filter_freq].linexp(0, 1, 20, 20000),
+					\filter_freq, ~juno6_dicts[track_index][\filter_freq].linexp(0, 1, 20, 10000),
 					\filter_res, ~juno6_dicts[track_index][\filter_res],
 					\filter_env_amount, ~juno6_dicts[track_index][\filter_env_amount]*5,
-					\lfo_rate, ~juno6_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+					//\lfo_rate, ~juno6_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
 					\freq_amount, ~juno6_dicts[track_index][\freq_amount],
 					\pwm_amount, ~juno6_dicts[track_index][\pwm_amount],
 					\ffreq_amount, ~juno6_dicts[track_index][\ffreq_amount],
 					\hpf_freq, ~juno6_dicts[track_index][\hpf_freq].linexp(0, 1, 20, 20000),
 					\chorus, ~juno6_dicts[track_index][\chorus],
 				], ~synth_group);
+				~lfos.set(
+					[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+					~juno6_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+					[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+					(~juno6_dicts[track_index][\lfo_shape]*3.999).floor,
+				);
+				~mixer.set(
+					[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+					~juno6_dicts[track_index][\chorus],
+				);
 				{
 					if(~juno6_voices[track_index][note_nr]!=nil,{
 						~juno6_voices[track_index][note_nr].set(\gate,0);
 					});
-				}.defer(15/~bpm*length);
+				}.defer(  (15/~bpm * (length - 1 + ( [~swing, 1-~swing].at(~count) *2) ) - 0.02).clip(0.01, 100)  );
 			},
 			4, {
 				// alpha juno
 				if(~alpha_juno_voices[track_index][note_nr]!=nil,{~alpha_juno_voices[track_index][note_nr].set(\kill_gate, 0);});
 				~alpha_juno_voices[track_index][note_nr] = Synth.new(\alphajuno, [
+					\in_bus, ~lfo_busses[track_index],
+					\macro1, ~alpha_juno_dicts[track_index][\macro1],
+					\macro2, ~alpha_juno_dicts[track_index][\macro2],
 					\freq, note_nr.midicps,
 					\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 					\gate, 1,
@@ -980,10 +1121,10 @@ SynthDef(\megafm, {
 					\env_decay, ~alpha_juno_dicts[track_index][\env_decay].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 					\env_sustain, ~alpha_juno_dicts[track_index][\env_sustain],
 					\env_release, ~alpha_juno_dicts[track_index][\env_release].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
-					\filter_freq, ~alpha_juno_dicts[track_index][\filter_freq].linexp(0, 1, 20, 20000),
+					\filter_freq, ~alpha_juno_dicts[track_index][\filter_freq].linexp(0, 1, 20, 10000),
 					\filter_res, ~alpha_juno_dicts[track_index][\filter_res],
 					\filter_env_amount, ~alpha_juno_dicts[track_index][\filter_env_amount]*5,
-					\lfo_rate, ~alpha_juno_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+					//\lfo_rate, ~alpha_juno_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
 					\freq_amount, ~alpha_juno_dicts[track_index][\freq_amount],
 					\pwm_speed, ~alpha_juno_dicts[track_index][\pwm_speed],
 					\pwm_amount, ~alpha_juno_dicts[track_index][\pwm_amount],
@@ -991,16 +1132,29 @@ SynthDef(\megafm, {
 					\hpf_freq, ~alpha_juno_dicts[track_index][\hpf_freq].linexp(0, 1, 20, 20000),
 					\chorus, ~alpha_juno_dicts[track_index][\chorus],
 				], ~synth_group);
+				~lfos.set(
+					[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+					~alpha_juno_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+					[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+					(~alpha_juno_dicts[track_index][\lfo_shape]*3.999).floor,
+				);
+				~mixer.set(
+					[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+					~alpha_juno_dicts[track_index][\chorus],
+				);
 				{
 					if(~alpha_juno_voices[track_index][note_nr]!=nil,{
 						~alpha_juno_voices[track_index][note_nr].set(\gate,0);
 					});
-				}.defer(15/~bpm*length);
+				}.defer(  (15/~bpm * (length - 1 + ( [~swing, 1-~swing].at(~count) *2) ) - 0.02).clip(0.01, 100)  );
 			},
 			5, {
 				// megafm
 				if(~megafm_voices[track_index][note_nr]!=nil,{~megafm_voices[track_index][note_nr].set(\kill_gate, 0);});
 				~megafm_voices[track_index][note_nr] = Synth.new(\megafm, [
+					\in_bus, ~lfo_busses[track_index],
+					\macro1, ~megafm_dicts[track_index][\macro1],
+					\macro2, ~megafm_dicts[track_index][\macro2],
 					\freq, note_nr.midicps,
 					\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 					\gate, 1,
@@ -1011,6 +1165,7 @@ SynthDef(\megafm, {
 					\op4_lvl, ~megafm_dicts[track_index][\op4_lvl],
 					\algorithm, (~megafm_dicts[track_index][\algorithm]*7.999).floor,
 					\fb, ~megafm_dicts[track_index][\fb],
+					\lfo_mod, ~megafm_dicts[track_index][\lfo_mod],
 					\op1_rat, ([0.5]++(1..15)).at((~megafm_dicts[track_index][\op1_rat]*15.999).floor),
 					\op2_rat, ([0.5]++(1..15)).at((~megafm_dicts[track_index][\op2_rat]*15.999).floor),
 					\op3_rat, ([0.5]++(1..15)).at((~megafm_dicts[track_index][\op3_rat]*15.999).floor),
@@ -1030,11 +1185,21 @@ SynthDef(\megafm, {
 					\mod_sr, ~megafm_dicts[track_index][\mod_sr].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 					\mod_rel, ~megafm_dicts[track_index][\mod_rel].linexp(0, 1, 0.1, 10).linlin(0.1, 10, 0.0005, 10),
 				], ~synth_group);
+				~lfos.set(
+					[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+					~megafm_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+					[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+					(~megafm_dicts[track_index][\lfo_shape]*3.999).floor,
+				);
+				~mixer.set(
+					[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+					~megafm_dicts[track_index][\chorus],
+				);
 				{
 					if(~megafm_voices[track_index][note_nr]!=nil,{
 						~megafm_voices[track_index][note_nr].set(\gate,0);
 					});
-				}.defer(15/~bpm*length);
+				}.defer(  (15/~bpm * (length - 1 + ( [~swing, 1-~swing].at(~count) *2) ) - 0.02).clip(0.01, 100)  );
 			},
 			6, {
 				// modal
@@ -1050,6 +1215,9 @@ SynthDef(\megafm, {
 					~modal_dicts[track_index][\shape_depth]
 				);
 				~modal_voices[track_index][note_nr] = Synth.new(\modal, [
+					\in_bus, ~lfo_busses[track_index],
+					\macro1, ~modal_dicts[track_index][\macro1],
+					\macro2, ~modal_dicts[track_index][\macro2],
 					\freq, note_nr.midicps,
 					\master_volume, vel.linlin(0.0, 1.0, -60, 0).dbamp,
 					\out, ~mixer_busses[track_index],
@@ -1062,6 +1230,16 @@ SynthDef(\megafm, {
 					\release, ~modal_dicts[track_index][\release].linexp(0, 1, 0.005, 3),
 					\resonance, ~modal_dicts[track_index][\resonance].linexp(0, 1, 0.5, 10),
 				], ~synth_group);
+				~lfos.set(
+					[\r1, \r2, \r3, \r4, \r5, \r6].at(track_index),
+					~modal_dicts[track_index][\lfo_rate].linexp(0, 1, 0.1, 10),
+					[\sh1, \sh2, \sh3, \sh4, \sh5, \sh6].at(track_index),
+					(~modal_dicts[track_index][\lfo_shape]*3.999).floor,
+				);
+				~mixer.set(
+					[\chor1, \chor2, \chor3, \chor4, \chor5, \chor6].at(track_index),
+					~modal_dicts[track_index][\chorus],
+				);
 				/*
 				{
 				~modal_voices[track_index][note_nr].set(\gate,0);
